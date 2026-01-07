@@ -16,7 +16,7 @@ public struct SandPhysicsJob : IJob
 
     public void Execute()
     {
-        // Copy từ readMap sang writeMap và reset hasMoved flag
+        // Copy tá»« readMap sang writeMap vÃ  reset hasMoved flag
         for (int i = 0; i < readMap.Length; i++)
         {
             writeMap[i] = readMap[i];
@@ -25,56 +25,84 @@ public struct SandPhysicsJob : IJob
             writeMap[i] = cell;
         }
 
-        // Quét từ DƯỚI lên TRÊN để xử lý gravity đúng
-        Unity.Mathematics.Random rnd = new Unity.Mathematics.Random((uint)(randomSeed * 1000 + 1));
-
-        for (int y = 0; y < height; y++)
+        // QuÃ©t tá»« DÆ¯á»šI lÃªn TRÃŠN Ä‘á»ƒ xá»­ lÃ½ gravity Ä‘Ãºng
+        var halfWidth = width / 2;
+        for (int y = 1; y < height; y++)
         {
-            for (int x = 0; x < width; x++)
+            for (int x = 0; x < halfWidth; x++)
             {
-                int idx = y * width + x;
-                Cell current = readMap[idx];
-
-                if (current.type == 1) // Nếu là CÁT
+                var idx = y * width + x;
+                Cell cell = writeMap[idx];
+                if (cell.type == 1 && !cell.hasMoved)
                 {
-                    // Check bên dưới
-                    if (y > 0)
+                    var downIdx = (y - 1) * width + x;
+                    
+                    // Check down-left first (only if not at left edge)
+                    if (x > 0)
                     {
-                        int downIdx = (y - 1) * width + x;
-                        int downLeftIdx = (y - 1) * width + (x - 1);
-                        int downRightIdx = (y - 1) * width + (x + 1);
+                        var downLeftIdx = (y - 1) * width + (x - 1);
+                        if (writeMap[downLeftIdx].type == 0)
+                        {
+                            MoveCell(idx, downLeftIdx);
+                            continue;
+                        }
+                    }
 
-                        // 1. Rơi thẳng
-                        if (writeMap[downIdx].type == 0) // Air
+                    // Check down-right (only if not at right edge)
+                    if (x < width - 1)
+                    {
+                        var downRightIdx = (y - 1) * width + (x + 1);
+                        if (writeMap[downRightIdx].type == 0)
                         {
-                            MoveCell(idx, downIdx);
+                            MoveCell(idx, downRightIdx);
+                            continue;
                         }
-                        // 2. Tương tác với BĂNG CHUYỀN
-                        else if (writeMap[downIdx].type == 3) // Conveyor Right
+                    }
+
+                    // Check straight down LAST
+                    if (writeMap[downIdx].type == 0)
+                    {
+                        MoveCell(idx, downIdx);
+                        continue;
+                    }
+                }
+            }
+
+            for (int x = width - 1; x >= halfWidth; x--)
+            {
+                var idx = y * width + x;
+                Cell cell = writeMap[idx];
+                if (cell.type == 1 && !cell.hasMoved)
+                {
+                    var downIdx = (y - 1) * width + x;
+
+                    // Check down-right first (only if not at right edge)
+                    if (x < width - 1)
+                    {
+                        var downRightIdx = (y - 1) * width + (x + 1);
+                        if (writeMap[downRightIdx].type == 0)
                         {
-                            if (x < width - 1 && writeMap[idx + 1].type == 0)
-                                MoveCell(idx, idx + 1);
+                            MoveCell(idx, downRightIdx);
+                            continue;
                         }
-                        else if (writeMap[downIdx].type == 4) // Conveyor Left
+                    }
+
+                    // Check down-left (only if not at left edge)
+                    if (x > 0)
+                    {
+                        var downLeftIdx = (y - 1) * width + (x - 1);
+                        if (writeMap[downLeftIdx].type == 0)
                         {
-                            if (x > 0 && writeMap[idx - 1].type == 0)
-                                MoveCell(idx, idx - 1);
+                            MoveCell(idx, downLeftIdx);
+                            continue;
                         }
-                        // 3. Trượt khi gặp vật cản
-                        else 
-                        {
-                            bool goLeft = rnd.NextBool();
-                            if (goLeft)
-                            {
-                                if (x > 0 && writeMap[downLeftIdx].type == 0) MoveCell(idx, downLeftIdx);
-                                else if (x < width - 1 && writeMap[downRightIdx].type == 0) MoveCell(idx, downRightIdx);
-                            }
-                            else
-                            {
-                                if (x < width - 1 && writeMap[downRightIdx].type == 0) MoveCell(idx, downRightIdx);
-                                else if (x > 0 && writeMap[downLeftIdx].type == 0) MoveCell(idx, downLeftIdx);
-                            }
-                        }
+                    }
+
+                    // Check straight down LAST
+                    if (writeMap[downIdx].type == 0)
+                    {
+                        MoveCell(idx, downIdx);
+                        continue;
                     }
                 }
             }
@@ -85,8 +113,11 @@ public struct SandPhysicsJob : IJob
     {
         if (writeMap[toIdx].type == 0)
         {
-            writeMap[toIdx] = writeMap[fromIdx];
-            var empty = new Cell { type = 0, color = new Color32(0,0,0,0) };
+            var movedCell = writeMap[fromIdx];
+            movedCell.hasMoved = true;
+            writeMap[toIdx] = movedCell;
+            
+            var empty = new Cell { type = 0, color = new Color32(0,0,0,0), hasMoved = false };
             writeMap[fromIdx] = empty;
         }
     }
