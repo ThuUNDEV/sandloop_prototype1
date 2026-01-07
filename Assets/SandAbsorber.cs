@@ -9,6 +9,7 @@ public class SandAbsorber : MonoBehaviour
     [SerializeField] private float scanHeight = 10f;
     [SerializeField] private int maxAbsorbPerFrame = 5;
     [SerializeField] private bool scanColumnAbove = true;
+    [SerializeField] private float scanYOffset = -0.5f;
 
     [Header("References")]
     [SerializeField] private SandSimulation sandSimulation;
@@ -128,8 +129,11 @@ public class SandAbsorber : MonoBehaviour
         int remaining = bucket.Data.capacity - bucket.Data.currentFill;
         int toAbsorb = Mathf.Min(remaining, maxAbsorbPerFrame);
 
+        // Apply offset to scan from bottom of bucket instead of center
+        Vector3 scanPosition = bucket.transform.position + new Vector3(0f, scanYOffset, 0f);
+
         int absorbed = AbsorbSand(
-            bucket.transform.position, 
+            scanPosition, 
             bucket.Data.bucketColor, 
             toAbsorb
         );
@@ -207,7 +211,8 @@ public class SandAbsorber : MonoBehaviour
         Gizmos.color = new Color(0f, 1f, 0f, 0.3f);
         
         Vector3 size = new Vector3(scanWidth, scanColumnAbove ? 10f : scanHeight, 0.1f);
-        Vector3 center = transform.position + Vector3.up * size.y / 2f;
+        Vector3 scanStart = transform.position + new Vector3(0f, scanYOffset, 0f);
+        Vector3 center = scanStart + Vector3.up * size.y / 2f;
         
         Gizmos.DrawCube(center, size);
         

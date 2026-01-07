@@ -377,8 +377,6 @@ MonoBehaviour:
   sandSimulation: {fileID: 1639151433}
   sandAbsorber: {fileID: 1639151439}
   slotsContainer: {fileID: 1513316317}
-  useUIMode: 0
-  gridLayout: {fileID: 0}
 --- !u!4 &1513316317
 Transform:
   m_ObjectHideFlags: 0
@@ -562,10 +560,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bd91522a4bf946e42a8bfc6c4a0d5120, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  scanWidth: 1
-  scanHeight: 2
-  maxAbsorbPerFrame: 5
+  scanWidth: 3.76
+  scanHeight: 0.57
+  maxAbsorbPerFrame: 50
   scanColumnAbove: 0
+  scanYOffset: -1.91
   sandSimulation: {fileID: 1639151433}
   simulationRenderer: {fileID: 1639151435}
   showDebugGizmos: 1
