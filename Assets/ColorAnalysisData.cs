@@ -5,6 +5,7 @@ using System.Collections.Generic;
 public class ColorAnalysisData : ScriptableObject
 {
     [Header("Source Info")]
+    public Texture2D sourceTexture;
     public string sourceImageName;
     public int sourceWidth;
     public int sourceHeight;

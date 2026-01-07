@@ -15,8 +15,6 @@ public class ConveyorGameManager : MonoBehaviour
 {
     [Header("References")]
     [SerializeField] private SandSimulation sandSimulation;
-    [SerializeField] private SandArtGenerator sandArtGenerator;
-    [SerializeField] private ColorQuantizer colorQuantizer;
     [SerializeField] private ConveyorBelt conveyor;
     [SerializeField] private BucketTray bucketTray;
     [SerializeField] private BucketManager bucketManager;
@@ -70,8 +68,6 @@ public class ConveyorGameManager : MonoBehaviour
         var locator = GameServiceLocator.Instance;
         
         if (sandSimulation == null) sandSimulation = locator.SandSimulation;
-        if (sandArtGenerator == null) sandArtGenerator = locator.SandArtGenerator;
-        if (colorQuantizer == null) colorQuantizer = locator.ColorQuantizer;
         if (conveyor == null) conveyor = locator.Conveyor;
         if (bucketTray == null) bucketTray = locator.BucketTray;
         if (bucketManager == null) bucketManager = locator.BucketManager;
@@ -80,7 +76,7 @@ public class ConveyorGameManager : MonoBehaviour
         // Pass references to dependent components
         if (bucketTray != null)
         {
-            bucketTray.SetReferences(conveyor, colorQuantizer, sandAbsorber);
+            bucketTray.SetReferences(conveyor, sandSimulation, sandAbsorber);
         }
 
         referencesInitialized = true;
@@ -156,7 +152,7 @@ public class ConveyorGameManager : MonoBehaviour
 
     private void OnSandArtDetected()
     {
-        Debug.Log("ConveyorGameManager: Sand art detected!");
+        Debug.Log($"[Profiling] ConveyorGameManager: Sand art detected at Time.time={Time.time}");
 
         if (autoStartOnSpawn)
         {
@@ -166,6 +162,7 @@ public class ConveyorGameManager : MonoBehaviour
 
     private IEnumerator DelayedStart()
     {
+        Debug.Log($"[Profiling] DelayedStart waiting {startDelay}s...");
         yield return new WaitForSeconds(startDelay);
         StartGame();
     }
@@ -175,20 +172,19 @@ public class ConveyorGameManager : MonoBehaviour
         if (currentState != GameState.Idle) return;
 
         currentState = GameState.Initializing;
-        Debug.Log("ConveyorGameManager: Initializing game...");
 
         // Analyze colors - skip if already has precomputed data
-        if (colorQuantizer.HasPrecomputedData && colorQuantizer.BucketDataList.Count > 0)
+        if (sandSimulation.HasPrecomputedData && sandSimulation.BucketDataList.Count > 0)
         {
             // Already loaded from precomputed data
         }
-        else if (sandArtGenerator != null && sandArtGenerator.sourceImage != null)
+        else if (sandSimulation != null && sandSimulation.SourceTexture != null)
         {
-            colorQuantizer.AnalyzeTexture(sandArtGenerator.sourceImage);
+            sandSimulation.AnalyzeTexture(sandSimulation.SourceTexture);
         }
         else
         {
-            colorQuantizer.AnalyzeFromSandSimulation(sandSimulation);
+            sandSimulation.AnalyzeFromCurrentMap();
         }
 
         // Generate buckets
@@ -200,7 +196,6 @@ public class ConveyorGameManager : MonoBehaviour
         OnGameStarted?.Invoke();
         
         UpdateUIState();
-        Debug.Log("ConveyorGameManager: Game started!");
     }
 
     public void PauseGame()
@@ -314,9 +309,9 @@ public class ConveyorGameManager : MonoBehaviour
             stats.completedBuckets = bucketTray.GetCompletedCount();
         }
 
-        if (colorQuantizer != null)
+        if (sandSimulation != null)
         {
-            stats.colorGroups = colorQuantizer.ColorGroups.Count;
+            stats.colorGroups = sandSimulation.ColorGroups.Count;
         }
 
         return stats;

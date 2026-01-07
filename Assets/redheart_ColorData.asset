@@ -12,125 +12,70 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 56b96c2564507424ebe72ce3addb0ca5, type: 3}
   m_Name: redheart_ColorData
   m_EditorClassIdentifier: 
+  sourceTexture: {fileID: 2800000, guid: d9092f87b591a97418e3033361de1862, type: 3}
   sourceImageName: redheart
   sourceWidth: 252
   sourceHeight: 253
   totalPixels: 63756
-  maxColorGroups: 12
-  colorThreshold: 30
-  maxTotalBuckets: 16
+  maxColorGroups: 2
+  colorThreshold: 127.68859
+  maxTotalBuckets: 12
   colorGroups:
   - representativeColor:
       serializedVersion: 2
-      rgba: 4294552566
-    pixelCount: 34370
+      rgba: 4294421237
+    pixelCount: 35929
   - representativeColor:
       serializedVersion: 2
-      rgba: 4281408481
-    pixelCount: 24506
-  - representativeColor:
-      serializedVersion: 2
-      rgba: 4281408480
-    pixelCount: 2346
-  - representativeColor:
-      serializedVersion: 2
-      rgba: 4292842980
-    pixelCount: 970
-  - representativeColor:
-      serializedVersion: 2
-      rgba: 4291005173
-    pixelCount: 358
-  - representativeColor:
-      serializedVersion: 2
-      rgba: 4283904724
-    pixelCount: 277
-  - representativeColor:
-      serializedVersion: 2
-      rgba: 4282393047
-    pixelCount: 247
-  - representativeColor:
-      serializedVersion: 2
-      rgba: 4285679833
-    pixelCount: 226
-  - representativeColor:
-      serializedVersion: 2
-      rgba: 4288770543
-    pixelCount: 210
-  - representativeColor:
-      serializedVersion: 2
-      rgba: 4287517121
-    pixelCount: 166
-  - representativeColor:
-      serializedVersion: 2
-      rgba: 4290148320
-    pixelCount: 41
-  - representativeColor:
-      serializedVersion: 2
-      rgba: 4286274810
-    pixelCount: 39
+      rgba: 4281474272
+    pixelCount: 27827
   buckets:
   - bucketColor:
       serializedVersion: 2
-      rgba: 4294552566
-    capacity: 3819
+      rgba: 4294421237
+    capacity: 5133
   - bucketColor:
       serializedVersion: 2
-      rgba: 4294552566
-    capacity: 3819
+      rgba: 4294421237
+    capacity: 5133
   - bucketColor:
       serializedVersion: 2
-      rgba: 4294552566
-    capacity: 3819
+      rgba: 4294421237
+    capacity: 5133
   - bucketColor:
       serializedVersion: 2
-      rgba: 4294552566
-    capacity: 3819
+      rgba: 4294421237
+    capacity: 5133
   - bucketColor:
       serializedVersion: 2
-      rgba: 4294552566
-    capacity: 3819
+      rgba: 4294421237
+    capacity: 5133
   - bucketColor:
       serializedVersion: 2
-      rgba: 4294552566
-    capacity: 3819
+      rgba: 4294421237
+    capacity: 5132
   - bucketColor:
       serializedVersion: 2
-      rgba: 4294552566
-    capacity: 3819
+      rgba: 4294421237
+    capacity: 5132
   - bucketColor:
       serializedVersion: 2
-      rgba: 4294552566
-    capacity: 3819
+      rgba: 4281474272
+    capacity: 5566
   - bucketColor:
       serializedVersion: 2
-      rgba: 4294552566
-    capacity: 3818
+      rgba: 4281474272
+    capacity: 5566
   - bucketColor:
       serializedVersion: 2
-      rgba: 4281408481
-    capacity: 4085
+      rgba: 4281474272
+    capacity: 5565
   - bucketColor:
       serializedVersion: 2
-      rgba: 4281408481
-    capacity: 4085
+      rgba: 4281474272
+    capacity: 5565
   - bucketColor:
       serializedVersion: 2
-      rgba: 4281408481
-    capacity: 4085
-  - bucketColor:
-      serializedVersion: 2
-      rgba: 4281408481
-    capacity: 4085
-  - bucketColor:
-      serializedVersion: 2
-      rgba: 4281408481
-    capacity: 4085
-  - bucketColor:
-      serializedVersion: 2
-      rgba: 4281408481
-    capacity: 4081
-  - bucketColor:
-      serializedVersion: 2
-      rgba: 4281408480
-    capacity: 2346
-  analyzedDate: 2026-01-07 09:52:55
+      rgba: 4281474272
+    capacity: 5565
+  analyzedDate: 2026-01-07 15:38:06

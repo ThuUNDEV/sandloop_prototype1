@@ -11,6 +11,8 @@ public class ColorAnalysisWindow : EditorWindow
     private int maxColorGroups = 12;
     private float colorThreshold = 30f;
     private int maxTotalBuckets = 16;
+    private bool autoThreshold = true;
+    private float calculatedThreshold = 0f;
     
     private Vector2 scrollPosition;
     private List<ColorGroupData> previewGroups = new List<ColorGroupData>();
@@ -97,8 +99,30 @@ public class ColorAnalysisWindow : EditorWindow
     {
         EditorGUILayout.LabelField("Settings", EditorStyles.boldLabel);
         
-        maxColorGroups = EditorGUILayout.IntSlider("Max Color Groups", maxColorGroups, 4, 20);
-        colorThreshold = EditorGUILayout.Slider("Color Threshold", colorThreshold, 10f, 100f);
+        maxColorGroups = EditorGUILayout.IntSlider("Max Color Groups", maxColorGroups, 2, 20);
+        
+        autoThreshold = EditorGUILayout.Toggle("Auto Calculate Threshold", autoThreshold);
+        
+        if (autoThreshold)
+        {
+            EditorGUI.BeginDisabledGroup(true);
+            EditorGUILayout.FloatField("Color Threshold (Auto)", calculatedThreshold);
+            EditorGUI.EndDisabledGroup();
+            
+            if (calculatedThreshold > 0)
+            {
+                EditorGUILayout.HelpBox(
+                    $"Threshold tự động: {calculatedThreshold:F1}\n" +
+                    "Đảm bảo tất cả pixel đều thuộc một nhóm màu.",
+                    MessageType.Info
+                );
+            }
+        }
+        else
+        {
+            colorThreshold = EditorGUILayout.Slider("Color Threshold", colorThreshold, 10f, 150f);
+        }
+        
         maxTotalBuckets = EditorGUILayout.IntSlider("Max Total Buckets", maxTotalBuckets, 4, 32);
     }
 
@@ -107,15 +131,24 @@ public class ColorAnalysisWindow : EditorWindow
         EditorGUILayout.BeginHorizontal();
 
         GUI.enabled = sourceTexture != null;
-        if (GUILayout.Button("Analyze", GUILayout.Height(30)))
+        
+        // Nếu có existingData, nút sẽ là "Analyze & Save"
+        string analyzeButtonText = existingData != null ? "Analyze & Update" : "Analyze";
+        if (GUILayout.Button(analyzeButtonText, GUILayout.Height(30)))
         {
             AnalyzeTexture();
+            
+            // Tự động lưu vào existingData nếu có
+            if (existingData != null && hasAnalyzed)
+            {
+                SaveToExistingData();
+            }
         }
 
-        GUI.enabled = hasAnalyzed && previewBuckets.Count > 0;
-        if (GUILayout.Button("Save to ScriptableObject", GUILayout.Height(30)))
+        GUI.enabled = hasAnalyzed && previewBuckets.Count > 0 && existingData == null;
+        if (GUILayout.Button("Save as New", GUILayout.Height(30)))
         {
-            SaveToScriptableObject();
+            SaveToNewScriptableObject();
         }
 
         GUI.enabled = true;
@@ -191,34 +224,17 @@ public class ColorAnalysisWindow : EditorWindow
             importer.SaveAndReimport();
         }
 
-        // Analyze
-        var colorGroups = new List<TempColorGroup>();
         Color32[] pixels = sourceTexture.GetPixels32();
 
-        foreach (var pixel in pixels)
+        // Nếu auto threshold, sử dụng K-means style clustering
+        if (autoThreshold)
         {
-            if (pixel.a < 25) continue;
-            AddColorToGroups(pixel, colorGroups);
+            AnalyzeWithAutoThreshold(pixels);
         }
-
-        // Merge if needed
-        while (colorGroups.Count > maxColorGroups)
+        else
         {
-            MergeSmallestGroups(colorGroups);
+            AnalyzeWithFixedThreshold(pixels);
         }
-
-        // Sort by pixel count
-        colorGroups = colorGroups.OrderByDescending(g => g.pixelCount).ToList();
-
-        // Convert to preview data
-        previewGroups.Clear();
-        foreach (var group in colorGroups)
-        {
-            previewGroups.Add(new ColorGroupData(group.representativeColor, group.pixelCount));
-        }
-
-        // Generate buckets
-        GenerateBuckets(colorGroups);
 
         // Restore texture settings
         if (!wasReadable && importer != null)
@@ -234,8 +250,171 @@ public class ColorAnalysisWindow : EditorWindow
         Repaint();
     }
 
+    private void AnalyzeWithFixedThreshold(Color32[] pixels)
+    {
+        var colorGroups = new List<TempColorGroup>();
+
+        foreach (var pixel in pixels)
+        {
+            if (pixel.a < 25) continue;
+            AddColorToGroups(pixel, colorGroups);
+        }
+
+        // Merge if needed
+        while (colorGroups.Count > maxColorGroups)
+        {
+            MergeSmallestGroups(colorGroups);
+        }
+
+        FinalizeGroups(colorGroups, pixels);
+    }
+
+    private void AnalyzeWithAutoThreshold(Color32[] pixels)
+    {
+        // Bước 1: Thu thập tất cả màu không trong suốt
+        var uniqueColors = new Dictionary<Color32, int>(new Color32Comparer());
+        
+        foreach (var pixel in pixels)
+        {
+            if (pixel.a < 25) continue;
+            
+            if (!uniqueColors.ContainsKey(pixel))
+                uniqueColors[pixel] = 0;
+            uniqueColors[pixel]++;
+        }
+
+        if (uniqueColors.Count == 0) return;
+
+        // Bước 2: Khởi tạo các nhóm với màu phổ biến nhất (không tính pixel)
+        var sortedColors = uniqueColors.OrderByDescending(kv => kv.Value).ToList();
+        var colorGroups = new List<TempColorGroup>();
+
+        // Chọn màu đầu tiên cho mỗi nhóm (cách xa nhau nhất)
+        colorGroups.Add(new TempColorGroup(sortedColors[0].Key, true)); // emptyInit = true
+        
+        while (colorGroups.Count < maxColorGroups && colorGroups.Count < sortedColors.Count)
+        {
+            // Tìm màu xa nhất so với tất cả các nhóm hiện có
+            Color32 farthestColor = sortedColors[0].Key;
+            float maxMinDistance = 0;
+
+            foreach (var kv in sortedColors)
+            {
+                float minDistToAnyGroup = float.MaxValue;
+                foreach (var group in colorGroups)
+                {
+                    float dist = ColorDistance(kv.Key, group.representativeColor);
+                    if (dist < minDistToAnyGroup)
+                        minDistToAnyGroup = dist;
+                }
+
+                if (minDistToAnyGroup > maxMinDistance)
+                {
+                    maxMinDistance = minDistToAnyGroup;
+                    farthestColor = kv.Key;
+                }
+            }
+
+            if (maxMinDistance > 1f)
+            {
+                colorGroups.Add(new TempColorGroup(farthestColor, true)); // emptyInit = true
+            }
+            else
+            {
+                break;
+            }
+        }
+
+        // Bước 3: Gán tất cả pixel vào nhóm gần nhất và tính threshold
+        float maxDistanceUsed = 0;
+
+        foreach (var kv in sortedColors)
+        {
+            Color32 color = kv.Key;
+            int count = kv.Value;
+
+            TempColorGroup closestGroup = null;
+            float minDistance = float.MaxValue;
+
+            foreach (var group in colorGroups)
+            {
+                float distance = ColorDistance(color, group.representativeColor);
+                if (distance < minDistance)
+                {
+                    minDistance = distance;
+                    closestGroup = group;
+                }
+            }
+
+            if (closestGroup != null)
+            {
+                for (int i = 0; i < count; i++)
+                {
+                    closestGroup.AddColor(color);
+                }
+
+                if (minDistance > maxDistanceUsed)
+                {
+                    maxDistanceUsed = minDistance;
+                }
+            }
+        }
+
+        // Cập nhật threshold tự động
+        calculatedThreshold = maxDistanceUsed + 1f; // +1 để đảm bảo bao gồm tất cả
+        colorThreshold = calculatedThreshold;
+
+        FinalizeGroups(colorGroups, pixels);
+        
+        Debug.Log($"[ColorAnalysis] Auto threshold: {calculatedThreshold:F1} (max distance: {maxDistanceUsed:F1})");
+    }
+
+    private void FinalizeGroups(List<TempColorGroup> colorGroups, Color32[] pixels)
+    {
+        // Sort by pixel count
+        colorGroups = colorGroups.OrderByDescending(g => g.pixelCount).ToList();
+
+        // Convert to preview data
+        previewGroups.Clear();
+        foreach (var group in colorGroups)
+        {
+            previewGroups.Add(new ColorGroupData(group.representativeColor, group.pixelCount));
+        }
+
+        // Verify total
+        int totalGroupedPixels = colorGroups.Sum(g => g.pixelCount);
+        int totalNonTransparent = pixels.Count(p => p.a >= 25);
+        
+        if (totalGroupedPixels != totalNonTransparent)
+        {
+            Debug.LogWarning($"[ColorAnalysis] Pixel mismatch! Grouped: {totalGroupedPixels}, Actual: {totalNonTransparent}");
+        }
+        else
+        {
+            Debug.Log($"[ColorAnalysis] ✓ All {totalGroupedPixels} pixels assigned to {colorGroups.Count} groups");
+        }
+
+        // Generate buckets
+        GenerateBuckets(colorGroups);
+    }
+
+    // Comparer cho Color32
+    private class Color32Comparer : IEqualityComparer<Color32>
+    {
+        public bool Equals(Color32 a, Color32 b)
+        {
+            return a.r == b.r && a.g == b.g && a.b == b.b;
+        }
+
+        public int GetHashCode(Color32 c)
+        {
+            return (c.r << 16) | (c.g << 8) | c.b;
+        }
+    }
+
     private void AddColorToGroups(Color32 color, List<TempColorGroup> groups)
     {
+        // Tìm nhóm trong threshold trước
         foreach (var group in groups)
         {
             if (IsColorSimilar(color, group.representativeColor, colorThreshold))
@@ -244,6 +423,31 @@ public class ColorAnalysisWindow : EditorWindow
                 return;
             }
         }
+
+        // Nếu không tìm thấy và đã đạt max groups, gán vào nhóm gần nhất
+        if (groups.Count >= maxColorGroups)
+        {
+            TempColorGroup closestGroup = null;
+            float minDistance = float.MaxValue;
+
+            foreach (var group in groups)
+            {
+                float distance = ColorDistance(color, group.representativeColor);
+                if (distance < minDistance)
+                {
+                    minDistance = distance;
+                    closestGroup = group;
+                }
+            }
+
+            if (closestGroup != null)
+            {
+                closestGroup.AddColor(color);
+                return;
+            }
+        }
+
+        // Tạo nhóm mới nếu chưa đạt max
         groups.Add(new TempColorGroup(color));
     }
 
@@ -307,25 +511,74 @@ public class ColorAnalysisWindow : EditorWindow
             int bucketsForGroup = Mathf.Max(1, Mathf.RoundToInt(ratio * remainingBuckets));
             bucketsForGroup = Mathf.Min(bucketsForGroup, remainingBuckets);
 
-            int capacityPerBucket = Mathf.CeilToInt((float)group.pixelCount / bucketsForGroup);
+            // Tính capacity đều cho mỗi bucket
+            int baseCapacity = group.pixelCount / bucketsForGroup;
+            int extraPixels = group.pixelCount % bucketsForGroup;
 
+            int actualBucketsCreated = 0;
             for (int i = 0; i < bucketsForGroup; i++)
             {
-                int remaining = group.pixelCount - (i * capacityPerBucket);
-                int capacity = Mathf.Min(capacityPerBucket, remaining);
+                // Phân bổ pixel dư cho các bucket đầu tiên
+                int capacity = baseCapacity + (i < extraPixels ? 1 : 0);
 
                 if (capacity > 0)
                 {
                     previewBuckets.Add(new BucketDataSO(group.representativeColor, capacity));
+                    actualBucketsCreated++;
                 }
             }
 
-            remainingBuckets -= bucketsForGroup;
+            remainingBuckets -= actualBucketsCreated;
             remainingPixels -= group.pixelCount;
+        }
+
+        // Verify total capacity matches total pixels
+        int totalCapacity = previewBuckets.Sum(b => b.capacity);
+        if (totalCapacity != totalPixels)
+        {
+            Debug.LogWarning($"[ColorAnalysis] Capacity mismatch! Total: {totalPixels}, Buckets capacity: {totalCapacity}, Diff: {totalPixels - totalCapacity}");
         }
     }
 
-    private void SaveToScriptableObject()
+    private void SaveToExistingData()
+    {
+        if (existingData == null) return;
+
+        // Tính tổng từ buckets (source of truth)
+        int totalFromBuckets = previewBuckets.Sum(b => b.capacity);
+        int totalFromGroups = previewGroups.Sum(g => g.pixelCount);
+
+        if (totalFromBuckets != totalFromGroups)
+        {
+            Debug.LogWarning($"[ColorAnalysis] Mismatch detected! Buckets: {totalFromBuckets}, Groups: {totalFromGroups}. Using bucket total.");
+        }
+
+        // Cập nhật dữ liệu vào existingData
+        existingData.sourceTexture = sourceTexture;
+        existingData.sourceImageName = sourceTexture != null ? sourceTexture.name : "Unknown";
+        existingData.sourceWidth = sourceTexture != null ? sourceTexture.width : 0;
+        existingData.sourceHeight = sourceTexture != null ? sourceTexture.height : 0;
+        existingData.totalPixels = totalFromBuckets; // Sử dụng tổng từ buckets
+        
+        existingData.maxColorGroups = maxColorGroups;
+        existingData.colorThreshold = colorThreshold;
+        existingData.maxTotalBuckets = maxTotalBuckets;
+        
+        existingData.colorGroups = new List<ColorGroupData>(previewGroups);
+        existingData.buckets = new List<BucketDataSO>(previewBuckets);
+        
+        existingData.analyzedDate = System.DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+
+        // Đánh dấu dirty và lưu
+        EditorUtility.SetDirty(existingData);
+        AssetDatabase.SaveAssets();
+        
+        EditorGUIUtility.PingObject(existingData);
+        Debug.Log($"[ColorAnalysis] Updated existing data: {AssetDatabase.GetAssetPath(existingData)}");
+        Debug.Log($"[ColorAnalysis] Total pixels saved: {totalFromBuckets}, Buckets: {previewBuckets.Count}");
+    }
+
+    private void SaveToNewScriptableObject()
     {
         string savePath = EditorUtility.SaveFilePanelInProject(
             "Save Color Analysis Data",
@@ -338,6 +591,7 @@ public class ColorAnalysisWindow : EditorWindow
 
         var data = ScriptableObject.CreateInstance<ColorAnalysisData>();
         
+        data.sourceTexture = sourceTexture;
         data.sourceImageName = sourceTexture != null ? sourceTexture.name : "Unknown";
         data.sourceWidth = sourceTexture != null ? sourceTexture.width : 0;
         data.sourceHeight = sourceTexture != null ? sourceTexture.height : 0;
@@ -377,6 +631,16 @@ public class ColorAnalysisWindow : EditorWindow
             totalB = color.b;
         }
 
+        // Constructor cho auto-threshold mode (không tính pixel đầu tiên)
+        public TempColorGroup(Color32 color, bool emptyInit)
+        {
+            representativeColor = color;
+            pixelCount = 0;
+            totalR = 0;
+            totalG = 0;
+            totalB = 0;
+        }
+
         public void AddColor(Color32 color)
         {
             pixelCount++;
@@ -397,6 +661,8 @@ public class ColorAnalysisWindow : EditorWindow
 
         private void UpdateRepresentativeColor()
         {
+            if (pixelCount == 0) return;
+            
             representativeColor = new Color32(
                 (byte)(totalR / pixelCount),
                 (byte)(totalG / pixelCount),

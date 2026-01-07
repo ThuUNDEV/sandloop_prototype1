@@ -25,8 +25,6 @@ public class GameServiceLocator : MonoBehaviour
 
     [Header("Core References")]
     [SerializeField] private SandSimulation _sandSimulation;
-    [SerializeField] private SandArtGenerator _sandArtGenerator;
-    [SerializeField] private ColorQuantizer _colorQuantizer;
     [SerializeField] private ConveyorBelt _conveyor;
     [SerializeField] private BucketTray _bucketTray;
     [SerializeField] private BucketManager _bucketManager;
@@ -37,8 +35,6 @@ public class GameServiceLocator : MonoBehaviour
 
     // Public accessors - lazy initialization
     public SandSimulation SandSimulation => GetOrFind(ref _sandSimulation);
-    public SandArtGenerator SandArtGenerator => GetOrFind(ref _sandArtGenerator);
-    public ColorQuantizer ColorQuantizer => GetOrFind(ref _colorQuantizer);
     public ConveyorBelt Conveyor => GetOrFind(ref _conveyor);
     public BucketTray BucketTray => GetOrFind(ref _bucketTray);
     public BucketManager BucketManager => GetOrFind(ref _bucketManager);
@@ -63,8 +59,6 @@ public class GameServiceLocator : MonoBehaviour
         if (_initialized) return;
 
         if (_sandSimulation == null) _sandSimulation = FindObjectOfType<SandSimulation>();
-        if (_sandArtGenerator == null) _sandArtGenerator = FindObjectOfType<SandArtGenerator>();
-        if (_colorQuantizer == null) _colorQuantizer = FindObjectOfType<ColorQuantizer>();
         if (_conveyor == null) _conveyor = FindObjectOfType<ConveyorBelt>();
         if (_bucketTray == null) _bucketTray = FindObjectOfType<BucketTray>();
         if (_bucketManager == null) _bucketManager = FindObjectOfType<BucketManager>();

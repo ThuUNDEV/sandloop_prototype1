@@ -5,11 +5,9 @@ using System.Collections.Generic;
 public class BucketManager : MonoBehaviour
 {
     [Header("References")]
-    [SerializeField] private ColorQuantizer colorQuantizer;
+    [SerializeField] private SandSimulation sandSimulation;
     [SerializeField] private BucketTray bucketTray;
     [SerializeField] private ConveyorBelt conveyor;
-    [SerializeField] private SandSimulation sandSimulation;
-    [SerializeField] private SandArtGenerator sandArtGenerator;
 
     [Header("Settings")]
     [SerializeField] private bool autoInitialize = true;
@@ -53,16 +51,14 @@ public class BucketManager : MonoBehaviour
         // Sử dụng ServiceLocator thay vì FindObjectOfType nhiều lần
         var locator = GameServiceLocator.Instance;
         
-        if (colorQuantizer == null) colorQuantizer = locator.ColorQuantizer;
+        if (sandSimulation == null) sandSimulation = locator.SandSimulation;
         if (bucketTray == null) bucketTray = locator.BucketTray;
         if (conveyor == null) conveyor = locator.Conveyor;
-        if (sandSimulation == null) sandSimulation = locator.SandSimulation;
-        if (sandArtGenerator == null) sandArtGenerator = locator.SandArtGenerator;
 
         // Pass references to BucketTray to avoid repeated FindObjectOfType
         if (bucketTray != null)
         {
-            bucketTray.SetReferences(conveyor, colorQuantizer, locator.SandAbsorber);
+            bucketTray.SetReferences(conveyor, sandSimulation, locator.SandAbsorber);
         }
 
         referencesFound = true;
@@ -71,17 +67,17 @@ public class BucketManager : MonoBehaviour
     public void InitializeGame()
     {
         // Skip analysis if already has precomputed data
-        if (colorQuantizer.HasPrecomputedData && colorQuantizer.BucketDataList.Count > 0)
+        if (sandSimulation.HasPrecomputedData && sandSimulation.BucketDataList.Count > 0)
         {
             // Already loaded from precomputed data
         }
-        else if (sandArtGenerator != null && sandArtGenerator.sourceImage != null)
+        else if (sandSimulation != null && sandSimulation.SourceTexture != null)
         {
-            colorQuantizer.AnalyzeTexture(sandArtGenerator.sourceImage);
+            sandSimulation.AnalyzeTexture(sandSimulation.SourceTexture);
         }
         else if (sandSimulation != null)
         {
-            colorQuantizer.AnalyzeFromSandSimulation(sandSimulation);
+            sandSimulation.AnalyzeFromCurrentMap();
         }
         else
         {
@@ -103,7 +99,7 @@ public class BucketManager : MonoBehaviour
     private int CalculateTotalSandPixels()
     {
         int total = 0;
-        foreach (var group in colorQuantizer.ColorGroups)
+        foreach (var group in sandSimulation.ColorGroups)
         {
             total += group.pixelCount;
         }

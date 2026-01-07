@@ -6,7 +6,6 @@ public class ConveyorSystemSetupWindow : EditorWindow
 {
     // References
     private GameObject sandSimulationObj;
-    private Texture2D sourceImage;
     private ColorAnalysisData precomputedData;
     
     // Settings
@@ -119,21 +118,13 @@ public class ConveyorSystemSetupWindow : EditorWindow
             {
                 EditorGUILayout.LabelField($"  Size: {sandSim.Width} x {sandSim.Height}");
                 
-                var artGen = sandSimulationObj.GetComponent<SandArtGenerator>();
-                if (artGen != null && artGen.sourceImage != null)
+                if (sandSim.SourceTexture != null)
                 {
-                    EditorGUILayout.LabelField($"  Source Image: {artGen.sourceImage.name}");
+                    EditorGUILayout.LabelField($"  Source Texture: {sandSim.SourceTexture.name}");
                 }
             }
         }
         
-        sourceImage = (Texture2D)EditorGUILayout.ObjectField(
-            "Source Image (Optional)", 
-            sourceImage, 
-            typeof(Texture2D), 
-            false
-        );
-
         EditorGUILayout.Space(5);
         
         precomputedData = (ColorAnalysisData)EditorGUILayout.ObjectField(
@@ -255,7 +246,7 @@ public class ConveyorSystemSetupWindow : EditorWindow
     {
         EditorGUILayout.LabelField("Advanced Settings", EditorStyles.boldLabel);
         
-        EditorGUILayout.LabelField("Color Quantizer", EditorStyles.miniLabel);
+        EditorGUILayout.LabelField("Color Analysis", EditorStyles.miniLabel);
         maxColorGroups = EditorGUILayout.IntSlider("Max Color Groups", maxColorGroups, 4, 20);
         colorThreshold = EditorGUILayout.Slider("Color Threshold", colorThreshold, 10f, 100f);
         maxTotalBuckets = EditorGUILayout.IntSlider("Max Total Buckets", maxTotalBuckets, 4, 32);
@@ -375,30 +366,19 @@ public class ConveyorSystemSetupWindow : EditorWindow
             return;
         }
         
-        // Add ColorQuantizer
-        var colorQuantizer = sandSimulationObj.GetComponent<ColorQuantizer>();
-        if (colorQuantizer == null)
+        // Configure SandSimulation via SerializedObject
+        var sandSim = sandSimulationObj.GetComponent<SandSimulation>();
+        if (sandSim != null)
         {
-            colorQuantizer = Undo.AddComponent<ColorQuantizer>(sandSimulationObj);
+            var so = new SerializedObject(sandSim);
+            
+            // Set precomputed data if available
+            if (precomputedData != null)
+            {
+                so.FindProperty("colorAnalysisData").objectReferenceValue = precomputedData;
+            }
+            so.ApplyModifiedProperties();
         }
-        
-        // Configure ColorQuantizer via SerializedObject
-        var so = new SerializedObject(colorQuantizer);
-        so.FindProperty("maxColorGroups").intValue = maxColorGroups;
-        so.FindProperty("colorThreshold").floatValue = colorThreshold;
-        so.FindProperty("maxTotalBuckets").intValue = maxTotalBuckets;
-        
-        // Set precomputed data if available
-        if (precomputedData != null)
-        {
-            so.FindProperty("precomputedData").objectReferenceValue = precomputedData;
-            so.FindProperty("useRuntimeAnalysis").boolValue = false;
-        }
-        else
-        {
-            so.FindProperty("useRuntimeAnalysis").boolValue = true;
-        }
-        so.ApplyModifiedProperties();
         
         // Add SandAbsorber
         var sandAbsorber = sandSimulationObj.GetComponent<SandAbsorber>();
@@ -409,22 +389,9 @@ public class ConveyorSystemSetupWindow : EditorWindow
         
         // Configure SandAbsorber
         var soAbsorber = new SerializedObject(sandAbsorber);
-        soAbsorber.FindProperty("sandSimulation").objectReferenceValue = sandSimulationObj.GetComponent<SandSimulation>();
-        soAbsorber.FindProperty("colorQuantizer").objectReferenceValue = colorQuantizer;
+        soAbsorber.FindProperty("sandSimulation").objectReferenceValue = sandSim;
         soAbsorber.FindProperty("simulationRenderer").objectReferenceValue = sandSimulationObj.GetComponent<Renderer>();
         soAbsorber.ApplyModifiedProperties();
-        
-        // Update SandArtGenerator if sourceImage is set
-        if (sourceImage != null)
-        {
-            var artGen = sandSimulationObj.GetComponent<SandArtGenerator>();
-            if (artGen != null)
-            {
-                var soArt = new SerializedObject(artGen);
-                soArt.FindProperty("sourceImage").objectReferenceValue = sourceImage;
-                soArt.ApplyModifiedProperties();
-            }
-        }
         
         SetStatus("Components đã được thêm vào SandSimulation!", MessageType.Info);
     }
@@ -677,7 +644,7 @@ public class ConveyorSystemSetupWindow : EditorWindow
         so.FindProperty("slotSpacingY").floatValue = slotSpacingY;
         so.FindProperty("bucketPrefab").objectReferenceValue = bucketPrefab;
         so.FindProperty("conveyor").objectReferenceValue = FindObjectOfType<ConveyorBelt>();
-        so.FindProperty("colorQuantizer").objectReferenceValue = sandSimulationObj.GetComponent<ColorQuantizer>();
+        so.FindProperty("sandSimulation").objectReferenceValue = sandSimulationObj.GetComponent<SandSimulation>();
         so.FindProperty("sandAbsorber").objectReferenceValue = sandSimulationObj.GetComponent<SandAbsorber>();
         so.ApplyModifiedProperties();
         
@@ -707,7 +674,6 @@ public class ConveyorSystemSetupWindow : EditorWindow
     {
         // Get all components
         var sandSim = sandSimulationObj?.GetComponent<SandSimulation>();
-        var colorQuantizer = sandSimulationObj?.GetComponent<ColorQuantizer>();
         var sandAbsorber = sandSimulationObj?.GetComponent<SandAbsorber>();
         var conveyor = FindObjectOfType<ConveyorBelt>();
         var bucketTray = FindObjectOfType<BucketTray>();
@@ -719,7 +685,6 @@ public class ConveyorSystemSetupWindow : EditorWindow
         {
             var so = new SerializedObject(sandAbsorber);
             so.FindProperty("sandSimulation").objectReferenceValue = sandSim;
-            so.FindProperty("colorQuantizer").objectReferenceValue = colorQuantizer;
             so.FindProperty("simulationRenderer").objectReferenceValue = sandSimulationObj?.GetComponent<Renderer>();
             so.ApplyModifiedProperties();
         }
@@ -737,7 +702,7 @@ public class ConveyorSystemSetupWindow : EditorWindow
         {
             var so = new SerializedObject(bucketTray);
             so.FindProperty("conveyor").objectReferenceValue = conveyor;
-            so.FindProperty("colorQuantizer").objectReferenceValue = colorQuantizer;
+            so.FindProperty("sandSimulation").objectReferenceValue = sandSim;
             so.FindProperty("sandAbsorber").objectReferenceValue = sandAbsorber;
             so.ApplyModifiedProperties();
         }
@@ -747,8 +712,6 @@ public class ConveyorSystemSetupWindow : EditorWindow
         {
             var so = new SerializedObject(gameManager);
             so.FindProperty("sandSimulation").objectReferenceValue = sandSim;
-            so.FindProperty("sandArtGenerator").objectReferenceValue = sandSimulationObj?.GetComponent<SandArtGenerator>();
-            so.FindProperty("colorQuantizer").objectReferenceValue = colorQuantizer;
             so.FindProperty("conveyor").objectReferenceValue = conveyor;
             so.FindProperty("bucketTray").objectReferenceValue = bucketTray;
             so.FindProperty("bucketManager").objectReferenceValue = bucketManager;
@@ -760,11 +723,9 @@ public class ConveyorSystemSetupWindow : EditorWindow
         if (bucketManager != null)
         {
             var so = new SerializedObject(bucketManager);
-            so.FindProperty("colorQuantizer").objectReferenceValue = colorQuantizer;
             so.FindProperty("bucketTray").objectReferenceValue = bucketTray;
             so.FindProperty("conveyor").objectReferenceValue = conveyor;
             so.FindProperty("sandSimulation").objectReferenceValue = sandSim;
-            so.FindProperty("sandArtGenerator").objectReferenceValue = sandSimulationObj?.GetComponent<SandArtGenerator>();
             so.ApplyModifiedProperties();
         }
         
@@ -786,9 +747,6 @@ public class ConveyorSystemSetupWindow : EditorWindow
         // Remove components from SandSimulation
         if (sandSimulationObj != null)
         {
-            var colorQuantizer = sandSimulationObj.GetComponent<ColorQuantizer>();
-            if (colorQuantizer != null) Undo.DestroyObjectImmediate(colorQuantizer);
-            
             var sandAbsorber = sandSimulationObj.GetComponent<SandAbsorber>();
             if (sandAbsorber != null) Undo.DestroyObjectImmediate(sandAbsorber);
         }

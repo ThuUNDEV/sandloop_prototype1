@@ -15,7 +15,7 @@ public class BucketTray : MonoBehaviour
 
     [Header("References")]
     [SerializeField] private ConveyorBelt conveyor;
-    [SerializeField] private ColorQuantizer colorQuantizer;
+    [SerializeField] private SandSimulation sandSimulation;
     [SerializeField] private SandAbsorber sandAbsorber;
     [SerializeField] private Transform slotsContainer;
 
@@ -54,10 +54,10 @@ public class BucketTray : MonoBehaviour
         isInitialized = true;
     }
 
-    public void SetReferences(ConveyorBelt conveyorRef, ColorQuantizer quantizerRef, SandAbsorber absorberRef)
+    public void SetReferences(ConveyorBelt conveyorRef, SandSimulation simulationRef, SandAbsorber absorberRef)
     {
         conveyor = conveyorRef;
-        colorQuantizer = quantizerRef;
+        sandSimulation = simulationRef;
         sandAbsorber = absorberRef;
     }
 
@@ -117,9 +117,9 @@ public class BucketTray : MonoBehaviour
 
     public void GenerateBuckets()
     {
-        if (colorQuantizer == null)
+        if (sandSimulation == null)
         {
-            Debug.LogError("BucketTray: ColorQuantizer not assigned!");
+            Debug.LogError("BucketTray: SandSimulation not assigned!");
             return;
         }
 
@@ -134,7 +134,10 @@ public class BucketTray : MonoBehaviour
 
         ClearAllBuckets();
 
-        var bucketDataList = colorQuantizer.BucketDataList;
+        var bucketDataList = sandSimulation.BucketDataList;
+
+        // Write debug log to markdown file
+        sandSimulation.AppendBucketDebugLog(bucketDataList);
 
         for (int i = 0; i < bucketDataList.Count; i++)
         {
@@ -144,7 +147,7 @@ public class BucketTray : MonoBehaviour
 
             if (bucket != null)
             {
-                bucket.Initialize(bucketData, conveyor, colorQuantizer, sandAbsorber);
+                bucket.Initialize(bucketData, conveyor, sandSimulation, sandAbsorber);
                 allBuckets.Add(bucket);
 
                 if (i < slots.Count)

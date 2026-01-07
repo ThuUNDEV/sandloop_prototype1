@@ -24,7 +24,7 @@ public class Bucket : MonoBehaviour
 
     [Header("References")]
     [SerializeField] private ConveyorBelt conveyor;
-    [SerializeField] private ColorQuantizer colorQuantizer;
+    [SerializeField] private SandSimulation sandSimulation;
     [SerializeField] private SandAbsorber sandAbsorber;
 
     [Header("Events")]
@@ -32,7 +32,6 @@ public class Bucket : MonoBehaviour
     public UnityEvent OnBucketClicked;
 
     private BucketState currentState = BucketState.InTray;
-    private SandSimulation sandSimulation;
 
     public BucketData Data => data;
     public BucketState CurrentState => currentState;
@@ -44,7 +43,7 @@ public class Bucket : MonoBehaviour
             bucketRenderer = GetComponent<SpriteRenderer>();
         }
 
-        if (conveyor != null)
+        if (conveyor != null && sandSimulation == null)
         {
             sandSimulation = conveyor.SandSimulation;
         }
@@ -61,17 +60,12 @@ public class Bucket : MonoBehaviour
         }
     }
 
-    public void Initialize(BucketData bucketData, ConveyorBelt conveyorBelt, ColorQuantizer quantizer, SandAbsorber absorber)
+    public void Initialize(BucketData bucketData, ConveyorBelt conveyorBelt, SandSimulation simulation, SandAbsorber absorber)
     {
         data = bucketData;
         conveyor = conveyorBelt;
-        colorQuantizer = quantizer;
+        sandSimulation = simulation;
         sandAbsorber = absorber;
-        
-        if (conveyor != null)
-        {
-            sandSimulation = conveyor.SandSimulation;
-        }
 
         UpdateVisual();
     }
@@ -165,7 +159,7 @@ public class Bucket : MonoBehaviour
 
                 if (cell.type == 1)
                 {
-                    if (colorQuantizer != null && !colorQuantizer.IsColorInGroup(cell.color, data.bucketColor))
+                    if (sandSimulation != null && !sandSimulation.IsColorInGroup(cell.color, data.bucketColor))
                         continue;
 
                     map[idx] = new Cell { type = 0, color = new Color32(0, 0, 0, 0), hasMoved = false };

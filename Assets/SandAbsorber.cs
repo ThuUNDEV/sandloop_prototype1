@@ -12,7 +12,6 @@ public class SandAbsorber : MonoBehaviour
 
     [Header("References")]
     [SerializeField] private SandSimulation sandSimulation;
-    [SerializeField] private ColorQuantizer colorQuantizer;
     [SerializeField] private Renderer simulationRenderer;
 
     [Header("Debug")]
@@ -39,19 +38,15 @@ public class SandAbsorber : MonoBehaviour
         if (sandSimulation == null)
             sandSimulation = GameServiceLocator.Instance.SandSimulation;
 
-        if (colorQuantizer == null)
-            colorQuantizer = GameServiceLocator.Instance.ColorQuantizer;
-
         if (simulationRenderer == null && sandSimulation != null)
             simulationRenderer = sandSimulation.GetComponent<Renderer>();
 
         referencesInitialized = true;
     }
 
-    public void SetReferences(SandSimulation simulation, ColorQuantizer quantizer, Renderer renderer)
+    public void SetReferences(SandSimulation simulation, Renderer renderer)
     {
         sandSimulation = simulation;
-        colorQuantizer = quantizer;
         simulationRenderer = renderer;
         referencesInitialized = true;
         InitializeBounds();
@@ -149,9 +144,9 @@ public class SandAbsorber : MonoBehaviour
 
     private bool IsColorMatch(Color32 sandColor, Color32 bucketColor)
     {
-        if (colorQuantizer != null)
+        if (sandSimulation != null)
         {
-            return colorQuantizer.IsColorInGroup(sandColor, bucketColor);
+            return sandSimulation.IsColorInGroup(sandColor, bucketColor);
         }
 
         float distance = ColorGroup.ColorDistance(sandColor, bucketColor);
