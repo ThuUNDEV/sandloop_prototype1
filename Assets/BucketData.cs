@@ -47,6 +47,13 @@ public class ColorGroup
         pixelCount = 1;
     }
 
+    public ColorGroup(Color32 color, int count)
+    {
+        representativeColor = color;
+        colors = new List<Color32> { color };
+        pixelCount = count;
+    }
+
     public void AddColor(Color32 color)
     {
         colors.Add(color);

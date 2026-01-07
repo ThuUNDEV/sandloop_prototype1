@@ -152,8 +152,6 @@ public class ConveyorGameManager : MonoBehaviour
 
     private void OnSandArtDetected()
     {
-        Debug.Log($"[Profiling] ConveyorGameManager: Sand art detected at Time.time={Time.time}");
-
         if (autoStartOnSpawn)
         {
             StartCoroutine(DelayedStart());
@@ -162,7 +160,6 @@ public class ConveyorGameManager : MonoBehaviour
 
     private IEnumerator DelayedStart()
     {
-        Debug.Log($"[Profiling] DelayedStart waiting {startDelay}s...");
         yield return new WaitForSeconds(startDelay);
         StartGame();
     }

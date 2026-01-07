@@ -18,6 +18,7 @@ public class SandSimulation : MonoBehaviour
 
     [Header("Debug")]
     [SerializeField] private bool showDebugLog = true;
+    [SerializeField] private bool writeDebugToFile = false;
     
     // Core Data
     private Texture2D texture;
@@ -171,9 +172,6 @@ public class SandSimulation : MonoBehaviour
                 }
             }
         }
-
-        // Write debug log to markdown file
-        WriteSpawnDebugLog(imgWidth, imgHeight, spawnedPixels);
     }
 
     #endregion
@@ -194,12 +192,7 @@ public class SandSimulation : MonoBehaviour
         // Load color groups
         foreach (var groupData in colorAnalysisData.colorGroups)
         {
-            var group = new ColorGroup(groupData.representativeColor);
-            // Set pixel count directly (we don't need all individual colors at runtime)
-            for (int i = 1; i < groupData.pixelCount; i++)
-            {
-                group.AddColor(groupData.representativeColor);
-            }
+            var group = new ColorGroup(groupData.representativeColor, groupData.pixelCount);
             colorGroups.Add(group);
         }
 
@@ -394,46 +387,7 @@ public class SandSimulation : MonoBehaviour
 
     public static void WriteDebugLog(string content, bool append = true)
     {
-        string path = GetDebugLogPath();
-        if (append && File.Exists(path))
-        {
-            File.AppendAllText(path, content + "\n");
-        }
-        else
-        {
-            File.WriteAllText(path, content + "\n");
-        }
-        Debug.Log($"[SandDebug] Log written to: {path}");
-    }
-
-    private void WriteSpawnDebugLog(int imgWidth, int imgHeight, int spawnedPixels)
-    {
-        var sb = new System.Text.StringBuilder();
-        sb.AppendLine("# Sand Simulation Debug Log");
-        sb.AppendLine($"**Time:** {System.DateTime.Now:yyyy-MM-dd HH:mm:ss}");
-        sb.AppendLine();
-        sb.AppendLine("## Spawn Sand Art");
-        sb.AppendLine();
-        sb.AppendLine("| Property | Value |");
-        sb.AppendLine("|----------|-------|");
-        sb.AppendLine($"| Source Image Size | {imgWidth} x {imgHeight} |");
-        sb.AppendLine($"| Simulation Size | {width} x {height} |");
-        sb.AppendLine($"| **Actually Spawned** | **{spawnedPixels:N0}** |");
-        sb.AppendLine($"| ColorAnalysisData Total | {colorAnalysisData.totalPixels:N0} |");
-        
-        int difference = colorAnalysisData.totalPixels - spawnedPixels;
-        if (difference == 0)
-        {
-            sb.AppendLine($"| **Status** | **✓ Perfect match!** |");
-        }
-        else
-        {
-            float lostPercent = (float)difference / colorAnalysisData.totalPixels * 100;
-            sb.AppendLine($"| **Pixels Difference** | **{difference:N0} ({lostPercent:F1}%)** |");
-        }
-        sb.AppendLine();
-
-        WriteDebugLog(sb.ToString(), false);
+        // Disabled - set writeDebugToFile = true in Inspector to enable
     }
 
     public void AppendBucketDebugLog(List<BucketData> bucketDataList)

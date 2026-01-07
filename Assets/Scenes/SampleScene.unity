@@ -374,7 +374,7 @@ MonoBehaviour:
   slotSpacingY: 1.2
   bucketPrefab: {fileID: 5552167793542805666, guid: 98853c6ee89a24a4db0232b9414797b4, type: 3}
   conveyor: {fileID: 2016368791}
-  sandSimulation: {fileID: 0}
+  sandSimulation: {fileID: 1639151433}
   sandAbsorber: {fileID: 1639151439}
   slotsContainer: {fileID: 1513316317}
   useUIMode: 0
@@ -461,7 +461,8 @@ MonoBehaviour:
   filterMode: 0
   targetRenderer: {fileID: 1639151435}
   colorAnalysisData: {fileID: 11400000, guid: b3fdae1e04082b04abcfd82623eb27aa, type: 2}
-  showDebugLog: 1
+  showDebugLog: 0
+  writeDebugToFile: 0
 --- !u!64 &1639151434
 MeshCollider:
   m_ObjectHideFlags: 0

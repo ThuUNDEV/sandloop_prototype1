@@ -1,5 +1,4 @@
 using UnityEngine;
-using UnityEngine.UI;
 using System.Collections.Generic;
 
 public class BucketTray : MonoBehaviour
@@ -18,10 +17,6 @@ public class BucketTray : MonoBehaviour
     [SerializeField] private SandSimulation sandSimulation;
     [SerializeField] private SandAbsorber sandAbsorber;
     [SerializeField] private Transform slotsContainer;
-
-    [Header("UI Mode (Optional)")]
-    [SerializeField] private bool useUIMode = false;
-    [SerializeField] private GridLayoutGroup gridLayout;
 
     private List<Transform> slots = new List<Transform>();
     private List<Bucket> allBuckets = new List<Bucket>();
@@ -74,43 +69,25 @@ public class BucketTray : MonoBehaviour
             }
         }
 
-        int slotCount = columns * rows;
+        // Calculate grid positions (centered)
+        float totalWidth = (columns - 1) * slotSpacingX;
+        float totalHeight = (rows - 1) * slotSpacingY;
+        float startX = -totalWidth / 2f;
+        float startY = totalHeight / 2f; // Start from top
 
-        if (useUIMode && gridLayout != null)
+        for (int row = 0; row < rows; row++)
         {
-            gridLayout.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
-            gridLayout.constraintCount = columns;
-
-            for (int i = 0; i < slotCount; i++)
+            for (int col = 0; col < columns; col++)
             {
-                var slot = new GameObject($"Slot_{i}");
+                int index = row * columns + col;
+                var slot = new GameObject($"Slot_{index}");
                 slot.transform.SetParent(slotsContainer);
-                slot.AddComponent<RectTransform>();
+                
+                float x = startX + col * slotSpacingX;
+                float y = startY - row * slotSpacingY; // Go down each row
+                
+                slot.transform.localPosition = new Vector3(x, y, 0f);
                 slots.Add(slot.transform);
-            }
-        }
-        else
-        {
-            // Calculate grid positions (centered)
-            float totalWidth = (columns - 1) * slotSpacingX;
-            float totalHeight = (rows - 1) * slotSpacingY;
-            float startX = -totalWidth / 2f;
-            float startY = totalHeight / 2f; // Start from top
-
-            for (int row = 0; row < rows; row++)
-            {
-                for (int col = 0; col < columns; col++)
-                {
-                    int index = row * columns + col;
-                    var slot = new GameObject($"Slot_{index}");
-                    slot.transform.SetParent(slotsContainer);
-                    
-                    float x = startX + col * slotSpacingX;
-                    float y = startY - row * slotSpacingY; // Go down each row
-                    
-                    slot.transform.localPosition = new Vector3(x, y, 0f);
-                    slots.Add(slot.transform);
-                }
             }
         }
     }
