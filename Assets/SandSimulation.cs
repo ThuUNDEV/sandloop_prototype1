@@ -9,6 +9,7 @@ public class SandSimulation : MonoBehaviour
 {
     [Header("Settings")]
     [SerializeField] private FilterMode filterMode = FilterMode.Point;
+    [SerializeField] [Range(1, 60)] private int simulationFrameInterval = 3; // Số frame giữa mỗi lần chạy physics (cao hơn = chậm hơn)
     
     [Header("Rendering")]
     public Renderer targetRenderer;
@@ -465,4 +466,55 @@ public class SandSimulation : MonoBehaviour
     }
 
     #endregion
+
+    public void ClearAllSand()
+    {
+        var map = GetCurrentWriteMap();
+        for (int i = 0; i < map.Length; i++)
+        {
+            map[i] = new Cell 
+            { 
+                type = 0, 
+                color = new Color32(0, 0, 0, 0), 
+                hasMoved = false 
+            };
+        }
+    }
+
+    public Vector2Int WorldToSimulation(Vector3 worldPos)
+    {
+        Bounds bounds = SimulationBounds;
+        float simX = (worldPos.x - bounds.min.x) / bounds.size.x * width;
+        float simY = (worldPos.y - bounds.min.y) / bounds.size.y * height;
+
+        int x = Mathf.Clamp(Mathf.FloorToInt(simX), 0, width - 1);
+        int y = Mathf.Clamp(Mathf.FloorToInt(simY), 0, height - 1);
+
+        return new Vector2Int(x, y);
+    }
+
+    public void ClearCell(int simPosX, int simPosY)
+    {
+        if (simPosX < 0 || simPosX >= width || simPosY < 0 || simPosY >= height)
+            return;
+
+        var map = GetCurrentWriteMap();
+        int idx = simPosY * width + simPosX;
+        map[idx] = new Cell 
+        { 
+            type = 0, 
+            color = new Color32(0, 0, 0, 0), 
+            hasMoved = false 
+        };
+    }
+
+    public void SetCell(int i, int i1, Cell sandCell)
+    {
+        if (i < 0 || i >= width || i1 < 0 || i1 >= height)
+            return;
+
+        var map = GetCurrentWriteMap();
+        int idx = i1 * width + i;
+        map[idx] = sandCell;
+    }
 }

@@ -355,7 +355,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &1513316316
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -374,7 +374,7 @@ MonoBehaviour:
   slotSpacingY: 1.2
   bucketPrefab: {fileID: 5552167793542805666, guid: 98853c6ee89a24a4db0232b9414797b4, type: 3}
   conveyor: {fileID: 2016368791}
-  sandSimulation: {fileID: 0}
+  colorQuantizer: {fileID: 1639151440}
   sandAbsorber: {fileID: 1639151439}
   slotsContainer: {fileID: 1513316317}
   useUIMode: 0
@@ -438,7 +438,10 @@ GameObject:
   - component: {fileID: 1639151435}
   - component: {fileID: 1639151434}
   - component: {fileID: 1639151433}
+  - component: {fileID: 1639151438}
+  - component: {fileID: 1639151440}
   - component: {fileID: 1639151439}
+  - component: {fileID: 1639151441}
   m_Layer: 0
   m_Name: Quad
   m_TagString: Untagged
@@ -458,10 +461,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 81732b23b452bc648ba354268afeec36, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  width: 100
+  height: 100
   filterMode: 0
   targetRenderer: {fileID: 1639151435}
-  colorAnalysisData: {fileID: 11400000, guid: b3fdae1e04082b04abcfd82623eb27aa, type: 2}
-  showDebugLog: 1
 --- !u!64 &1639151434
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -549,6 +552,21 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1639151438
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1639151432}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ecac0b53cb4fdbc4e8e06b50716e6b9e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  sourceImage: {fileID: 2800000, guid: d9092f87b591a97418e3033361de1862, type: 3}
+  autoSpawnOnStart: 1
+  autoSpawnDelay: 0.1
 --- !u!114 &1639151439
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -562,15 +580,58 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   scanWidth: 1
-  scanHeight: 2
+  scanHeight: 10
   maxAbsorbPerFrame: 5
-  scanColumnAbove: 0
+  scanColumnAbove: 1
   sandSimulation: {fileID: 1639151433}
+  colorQuantizer: {fileID: 1639151440}
   simulationRenderer: {fileID: 1639151435}
   showDebugGizmos: 1
   OnSandAbsorbed:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &1639151440
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1639151432}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c823b74860e8cb347952f1c6b9773dea, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  maxColorGroups: 12
+  colorThreshold: 30
+  maxTotalBuckets: 16
+  showDebugLog: 1
+--- !u!114 &1639151441
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1639151432}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7d3e4f5a6b7c8d9e0f1a2b3c4d5e6f70, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  sandSimulation: {fileID: 0}
+  mainCamera: {fileID: 0}
+  brushSize: 1
+  sandColor:
+    serializedVersion: 2
+    rgba: 4288077055
+  randomizeColor: 1
+  colorVariation: 0.1
+  drawKey: 323
+  eraseKey: 324
+  eraseSinglePixelKey: 325
+  clearAllKey: 99
+  drawCircle: 1
+  drawRate: 0.01
 --- !u!1 &2016368790
 GameObject:
   m_ObjectHideFlags: 0
@@ -588,7 +649,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &2016368791
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -693,7 +754,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &2037086906
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -706,9 +767,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5c6fea4009b6f2e4687fcfe916ecfc3b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  sandSimulation: {fileID: 1639151433}
+  colorQuantizer: {fileID: 1639151440}
   bucketTray: {fileID: 1513316316}
   conveyor: {fileID: 2016368791}
+  sandSimulation: {fileID: 1639151433}
+  sandArtGenerator: {fileID: 1639151438}
   autoInitialize: 1
   initializeKey: 13
   OnGameStart:
@@ -733,6 +796,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   sandSimulation: {fileID: 1639151433}
+  sandArtGenerator: {fileID: 1639151438}
+  colorQuantizer: {fileID: 1639151440}
   conveyor: {fileID: 2016368791}
   bucketTray: {fileID: 1513316316}
   bucketManager: {fileID: 2037086906}

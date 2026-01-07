@@ -16,7 +16,7 @@ public struct SandPhysicsJob : IJob
 
     public void Execute()
     {
-        // Copy từ readMap sang writeMap và reset hasMoved flag
+        // Copy tá»« readMap sang writeMap vÃ  reset hasMoved flag
         for (int i = 0; i < readMap.Length; i++)
         {
             writeMap[i] = readMap[i];
@@ -25,56 +25,91 @@ public struct SandPhysicsJob : IJob
             writeMap[i] = cell;
         }
 
-        // Quét từ DƯỚI lên TRÊN để xử lý gravity đúng
-        Unity.Mathematics.Random rnd = new Unity.Mathematics.Random((uint)(randomSeed * 1000 + 1));
-
-        for (int y = 0; y < height; y++)
+        // QuÃ©t tá»« DÆ¯á»šI lÃªn TRÃŠN Ä‘á»ƒ xá»­ lÃ½ gravity Ä‘Ãºng
+        var halfWidth = width / 2;
+        for (int y = 1; y < height; y++)
         {
-            for (int x = 0; x < width; x++)
+            for (int x = 0; x < halfWidth; x++)
             {
-                int idx = y * width + x;
-                Cell current = readMap[idx];
-
-                if (current.type == 1) // Nếu là CÁT
+                var idx = y * width + x;
+                Cell cell = writeMap[idx];
+                if (cell.type == 1)
                 {
-                    // Check bên dưới
-                    if (y > 0)
-                    {
-                        int downIdx = (y - 1) * width + x;
-                        int downLeftIdx = (y - 1) * width + (x - 1);
-                        int downRightIdx = (y - 1) * width + (x + 1);
+                    var downIdx = (y - 1) * width + x;
+                    
+                    // Check straight down FIRST - most natural behavior
 
-                        // 1. Rơi thẳng
-                        if (writeMap[downIdx].type == 0) // Air
+
+                    // Only check diagonals if straight down is blocked
+                    // Check down-right (only if not at right edge)
+                    if (x < width - 1)
+                    {
+                        var downRightIdx = (y - 1) * width + (x + 1);
+                        if (writeMap[downRightIdx].type == 0)
                         {
-                            MoveCell(idx, downIdx);
+                            MoveCell(idx, downRightIdx);
+                            continue;
                         }
-                        // 2. Tương tác với BĂNG CHUYỀN
-                        else if (writeMap[downIdx].type == 3) // Conveyor Right
+                    }
+
+                    // Check down-left (only if not at left edge)
+                    if (x > 0)
+                    {
+                        var downLeftIdx = (y - 1) * width + (x - 1);
+                        if (writeMap[downLeftIdx].type == 0)
                         {
-                            if (x < width - 1 && writeMap[idx + 1].type == 0)
-                                MoveCell(idx, idx + 1);
+                            MoveCell(idx, downLeftIdx);
+                            continue;
                         }
-                        else if (writeMap[downIdx].type == 4) // Conveyor Left
+                    }
+                    
+                    if (writeMap[downIdx].type == 0)
+                    {
+                        MoveCell(idx, downIdx);
+                        continue;
+                    }
+                }
+            }
+
+            for (int x = width - 1; x >= halfWidth; x--)
+            {
+                var idx = y * width + x;
+                Cell cell = writeMap[idx];
+                if (cell.type == 1)
+                {
+
+                    var downIdx = (y - 1) * width + x;
+
+
+
+                    // Only check diagonals if straight down is blocked
+                    // Check down-left (only if not at left edge)
+                    if (x > 0)
+                    {
+                        var downLeftIdx = (y - 1) * width + (x - 1);
+                        if (writeMap[downLeftIdx].type == 0)
                         {
-                            if (x > 0 && writeMap[idx - 1].type == 0)
-                                MoveCell(idx, idx - 1);
+                            MoveCell(idx, downLeftIdx);
+                            continue;
                         }
-                        // 3. Trượt khi gặp vật cản
-                        else 
+                    }
+
+                    // Check down-right (only if not at right edge)
+                    if (x < width - 1)
+                    {
+                        var downRightIdx = (y - 1) * width + (x + 1);
+                        if (writeMap[downRightIdx].type == 0)
                         {
-                            bool goLeft = rnd.NextBool();
-                            if (goLeft)
-                            {
-                                if (x > 0 && writeMap[downLeftIdx].type == 0) MoveCell(idx, downLeftIdx);
-                                else if (x < width - 1 && writeMap[downRightIdx].type == 0) MoveCell(idx, downRightIdx);
-                            }
-                            else
-                            {
-                                if (x < width - 1 && writeMap[downRightIdx].type == 0) MoveCell(idx, downRightIdx);
-                                else if (x > 0 && writeMap[downLeftIdx].type == 0) MoveCell(idx, downLeftIdx);
-                            }
+                            MoveCell(idx, downRightIdx);
+                            continue;
                         }
+                    }
+                    
+                    // Check straight down FIRST - most natural behavior
+                    if (writeMap[downIdx].type == 0)
+                    {
+                        MoveCell(idx, downIdx);
+                        continue;
                     }
                 }
             }
