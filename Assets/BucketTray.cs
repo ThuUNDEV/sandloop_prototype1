@@ -34,19 +34,31 @@ public class BucketTray : MonoBehaviour
     public int Columns => columns;
     public int Rows => rows;
 
+    private bool isInitialized = false;
+
     void Start()
     {
+        Initialize();
+    }
+
+    private void Initialize()
+    {
+        if (isInitialized) return;
+        
         if (slotsContainer == null)
         {
             slotsContainer = transform;
         }
 
-        if (sandAbsorber == null)
-        {
-            sandAbsorber = FindObjectOfType<SandAbsorber>();
-        }
-
         CreateSlots();
+        isInitialized = true;
+    }
+
+    public void SetReferences(ConveyorBelt conveyorRef, ColorQuantizer quantizerRef, SandAbsorber absorberRef)
+    {
+        conveyor = conveyorRef;
+        colorQuantizer = quantizerRef;
+        sandAbsorber = absorberRef;
     }
 
     private void CreateSlots()
@@ -116,6 +128,9 @@ public class BucketTray : MonoBehaviour
             Debug.LogError("BucketTray: Bucket prefab not assigned!");
             return;
         }
+
+        // Ensure initialized
+        Initialize();
 
         ClearAllBuckets();
 

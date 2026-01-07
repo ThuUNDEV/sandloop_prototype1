@@ -4,7 +4,11 @@ using System.Linq;
 
 public class ColorQuantizer : MonoBehaviour
 {
-    [Header("Settings")]
+    [Header("Pre-computed Data (Recommended)")]
+    [SerializeField] private ColorAnalysisData precomputedData;
+
+    [Header("Runtime Settings (Fallback)")]
+    [SerializeField] private bool useRuntimeAnalysis = false;
     [SerializeField] private int maxColorGroups = 12;
     [SerializeField] private float colorThreshold = 30f;
     [SerializeField] private int maxTotalBuckets = 16;
@@ -17,9 +21,63 @@ public class ColorQuantizer : MonoBehaviour
 
     public List<ColorGroup> ColorGroups => colorGroups;
     public List<BucketData> BucketDataList => bucketDataList;
+    public bool HasPrecomputedData => precomputedData != null;
+
+    void Awake()
+    {
+        if (precomputedData != null && !useRuntimeAnalysis)
+        {
+            LoadFromPrecomputedData();
+        }
+    }
+
+    public void LoadFromPrecomputedData()
+    {
+        if (precomputedData == null)
+        {
+            Debug.LogWarning("ColorQuantizer: No precomputed data assigned!");
+            return;
+        }
+
+        colorGroups.Clear();
+        bucketDataList.Clear();
+
+        // Load color groups
+        foreach (var groupData in precomputedData.colorGroups)
+        {
+            var group = new ColorGroup(groupData.representativeColor);
+            // Set pixel count directly (we don't need all individual colors at runtime)
+            for (int i = 1; i < groupData.pixelCount; i++)
+            {
+                group.AddColor(groupData.representativeColor);
+            }
+            colorGroups.Add(group);
+        }
+
+        // Load bucket data
+        foreach (var bucketSO in precomputedData.buckets)
+        {
+            bucketDataList.Add(bucketSO.ToBucketData());
+        }
+
+        // Update threshold from precomputed data
+        colorThreshold = precomputedData.colorThreshold;
+
+        if (showDebugLog)
+        {
+            Debug.Log($"ColorQuantizer: Loaded {colorGroups.Count} color groups, {bucketDataList.Count} buckets from precomputed data");
+        }
+    }
 
     public void AnalyzeTexture(Texture2D texture)
     {
+        // If precomputed data exists and runtime analysis is disabled, use precomputed
+        if (precomputedData != null && !useRuntimeAnalysis)
+        {
+            LoadFromPrecomputedData();
+            return;
+        }
+
         if (texture == null)
         {
             Debug.LogError("ColorQuantizer: Texture is null!");
@@ -54,6 +112,13 @@ public class ColorQuantizer : MonoBehaviour
 
     public void AnalyzeFromSandSimulation(SandSimulation simulation)
     {
+        // If precomputed data exists and runtime analysis is disabled, use precomputed
+        if (precomputedData != null && !useRuntimeAnalysis)
+        {
+            LoadFromPrecomputedData();
+            return;
+        }
+
         if (simulation == null)
         {
             Debug.LogError("ColorQuantizer: SandSimulation is null!");

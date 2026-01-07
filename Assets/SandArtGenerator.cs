@@ -51,7 +51,7 @@ public class SandArtGenerator : MonoBehaviour
         int imgWidth = sourceImage.width;
         int imgHeight = sourceImage.height;
 
-        // Scale để ảnh vừa với simulation (scale = 1)
+        // Scale để ảnh vừa với simulation
         float scaleX = (float)simulation.Width / imgWidth;
         float scaleY = (float)simulation.Height / imgHeight;
         float scale = Mathf.Min(scaleX, scaleY);
@@ -66,34 +66,41 @@ public class SandArtGenerator : MonoBehaviour
         int startX = (simulation.Width - scaledWidth) / 2;
         int startY = (simulation.Height - scaledHeight) / 2;
 
+        // Cache tất cả pixels một lần - tối ưu hiệu năng
+        Color32[] sourcePixels = sourceImage.GetPixels32();
+        
         NativeArray<Cell> targetMap = simulation.GetCurrentWriteMap();
+        int simWidth = simulation.Width;
+
+        // Pre-calculate inverse scale
+        float invScale = 1f / scale;
 
         // Spawn cát từ ảnh
         for (int y = 0; y < scaledHeight; y++)
         {
+            int py = startY + y;
+            if (py < 0 || py >= simulation.Height) continue;
+            
+            int srcY = Mathf.Min((int)(y * invScale), imgHeight - 1);
+            int rowOffset = py * simWidth;
+            int srcRowOffset = srcY * imgWidth;
+
             for (int x = 0; x < scaledWidth; x++)
             {
-                float srcX = x / scale;
-                float srcY = y / scale;
-                
-                Color pixelColor = sourceImage.GetPixelBilinear(srcX / imgWidth, srcY / imgHeight);
+                int px = startX + x;
+                if (px < 0 || px >= simWidth) continue;
 
-                if (pixelColor.a > 0.1f)
+                int srcX = Mathf.Min((int)(x * invScale), imgWidth - 1);
+                Color32 pixelColor = sourcePixels[srcRowOffset + srcX];
+
+                if (pixelColor.a > 25)
                 {
-                    int px = startX + x;
-                    int py = startY + y;
-
-                    if (px >= 0 && px < simulation.Width && py >= 0 && py < simulation.Height)
-                    {
-                        int idx = py * simulation.Width + px;
-                        
-                        Color32 sandColor = pixelColor;
-                        targetMap[idx] = new Cell 
-                        { 
-                            type = 1,
-                            color = sandColor
-                        };
-                    }
+                    int idx = rowOffset + px;
+                    targetMap[idx] = new Cell 
+                    { 
+                        type = 1,
+                        color = pixelColor
+                    };
                 }
             }
         }

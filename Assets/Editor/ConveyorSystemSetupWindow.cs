@@ -7,6 +7,7 @@ public class ConveyorSystemSetupWindow : EditorWindow
     // References
     private GameObject sandSimulationObj;
     private Texture2D sourceImage;
+    private ColorAnalysisData precomputedData;
     
     // Settings
     private float conveyorSpeed = 2f;
@@ -132,6 +133,34 @@ public class ConveyorSystemSetupWindow : EditorWindow
             typeof(Texture2D), 
             false
         );
+
+        EditorGUILayout.Space(5);
+        
+        precomputedData = (ColorAnalysisData)EditorGUILayout.ObjectField(
+            "Precomputed Data (Recommended)",
+            precomputedData,
+            typeof(ColorAnalysisData),
+            false
+        );
+
+        if (precomputedData != null)
+        {
+            EditorGUILayout.HelpBox(
+                $"✓ Using precomputed data\n" +
+                $"  Source: {precomputedData.sourceImageName}\n" +
+                $"  Buckets: {precomputedData.buckets.Count}\n" +
+                $"  Analyzed: {precomputedData.analyzedDate}",
+                MessageType.Info
+            );
+        }
+        else
+        {
+            EditorGUILayout.HelpBox(
+                "Tip: Dùng Tools > Color Analysis để tạo precomputed data\n" +
+                "giúp game load nhanh hơn!",
+                MessageType.Warning
+            );
+        }
     }
 
     private void DrawConveyorSettings()
@@ -285,6 +314,20 @@ public class ConveyorSystemSetupWindow : EditorWindow
         }
         
         EditorGUILayout.EndHorizontal();
+
+        EditorGUILayout.BeginHorizontal();
+        
+        if (GUILayout.Button("Add FPS Display"))
+        {
+            AddFPSDisplay();
+        }
+        
+        if (GUILayout.Button("Open Color Analysis"))
+        {
+            ColorAnalysisWindow.ShowWindow();
+        }
+        
+        EditorGUILayout.EndHorizontal();
         
         EditorGUILayout.Space(5);
         
@@ -344,6 +387,17 @@ public class ConveyorSystemSetupWindow : EditorWindow
         so.FindProperty("maxColorGroups").intValue = maxColorGroups;
         so.FindProperty("colorThreshold").floatValue = colorThreshold;
         so.FindProperty("maxTotalBuckets").intValue = maxTotalBuckets;
+        
+        // Set precomputed data if available
+        if (precomputedData != null)
+        {
+            so.FindProperty("precomputedData").objectReferenceValue = precomputedData;
+            so.FindProperty("useRuntimeAnalysis").boolValue = false;
+        }
+        else
+        {
+            so.FindProperty("useRuntimeAnalysis").boolValue = true;
+        }
         so.ApplyModifiedProperties();
         
         // Add SandAbsorber
@@ -740,6 +794,12 @@ public class ConveyorSystemSetupWindow : EditorWindow
         }
         
         SetStatus("Đã xóa tất cả Conveyor objects!", MessageType.Info);
+    }
+
+    private void AddFPSDisplay()
+    {
+        // FPSDisplay removed - use SRDebugger instead (Ctrl+Shift+F4 to open Profiler tab)
+        SetStatus("Sử dụng SRDebugger để xem FPS (Ctrl+Shift+F4)", MessageType.Info);
     }
 
     private void SetStatus(string message, MessageType type)

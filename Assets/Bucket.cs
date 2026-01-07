@@ -61,7 +61,7 @@ public class Bucket : MonoBehaviour
         }
     }
 
-    public void Initialize(BucketData bucketData, ConveyorBelt conveyorBelt, ColorQuantizer quantizer, SandAbsorber absorber = null)
+    public void Initialize(BucketData bucketData, ConveyorBelt conveyorBelt, ColorQuantizer quantizer, SandAbsorber absorber)
     {
         data = bucketData;
         conveyor = conveyorBelt;
@@ -71,11 +71,6 @@ public class Bucket : MonoBehaviour
         if (conveyor != null)
         {
             sandSimulation = conveyor.SandSimulation;
-        }
-
-        if (sandAbsorber == null)
-        {
-            sandAbsorber = FindObjectOfType<SandAbsorber>();
         }
 
         UpdateVisual();

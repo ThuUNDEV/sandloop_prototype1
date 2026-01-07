@@ -23,23 +23,38 @@ public class SandAbsorber : MonoBehaviour
 
     private Bounds simulationBounds;
     private bool boundsInitialized = false;
+    private bool referencesInitialized = false;
 
     void Start()
     {
-        FindReferences();
+        CacheReferences();
         InitializeBounds();
     }
 
-    private void FindReferences()
+    private void CacheReferences()
     {
+        if (referencesInitialized) return;
+
+        // Sử dụng ServiceLocator thay vì FindObjectOfType nhiều lần
         if (sandSimulation == null)
-            sandSimulation = FindObjectOfType<SandSimulation>();
+            sandSimulation = GameServiceLocator.Instance.SandSimulation;
 
         if (colorQuantizer == null)
-            colorQuantizer = FindObjectOfType<ColorQuantizer>();
+            colorQuantizer = GameServiceLocator.Instance.ColorQuantizer;
 
         if (simulationRenderer == null && sandSimulation != null)
             simulationRenderer = sandSimulation.GetComponent<Renderer>();
+
+        referencesInitialized = true;
+    }
+
+    public void SetReferences(SandSimulation simulation, ColorQuantizer quantizer, Renderer renderer)
+    {
+        sandSimulation = simulation;
+        colorQuantizer = quantizer;
+        simulationRenderer = renderer;
+        referencesInitialized = true;
+        InitializeBounds();
     }
 
     private void InitializeBounds()

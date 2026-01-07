@@ -23,13 +23,14 @@ public class BucketManager : MonoBehaviour
     private bool isGameActive = false;
     private int totalSandPixels = 0;
     private int absorbedPixels = 0;
+    private bool referencesFound = false;
 
     public bool IsGameActive => isGameActive;
     public float Progress => totalSandPixels > 0 ? (float)absorbedPixels / totalSandPixels : 0f;
 
     void Start()
     {
-        FindReferences();
+        CacheReferences();
     }
 
     void Update()
@@ -45,27 +46,36 @@ public class BucketManager : MonoBehaviour
         }
     }
 
-    private void FindReferences()
+    private void CacheReferences()
     {
-        if (colorQuantizer == null)
-            colorQuantizer = FindObjectOfType<ColorQuantizer>();
-        
-        if (bucketTray == null)
-            bucketTray = FindObjectOfType<BucketTray>();
-        
-        if (conveyor == null)
-            conveyor = FindObjectOfType<ConveyorBelt>();
-        
-        if (sandSimulation == null)
-            sandSimulation = FindObjectOfType<SandSimulation>();
+        if (referencesFound) return;
 
-        if (sandArtGenerator == null)
-            sandArtGenerator = FindObjectOfType<SandArtGenerator>();
+        // Sử dụng ServiceLocator thay vì FindObjectOfType nhiều lần
+        var locator = GameServiceLocator.Instance;
+        
+        if (colorQuantizer == null) colorQuantizer = locator.ColorQuantizer;
+        if (bucketTray == null) bucketTray = locator.BucketTray;
+        if (conveyor == null) conveyor = locator.Conveyor;
+        if (sandSimulation == null) sandSimulation = locator.SandSimulation;
+        if (sandArtGenerator == null) sandArtGenerator = locator.SandArtGenerator;
+
+        // Pass references to BucketTray to avoid repeated FindObjectOfType
+        if (bucketTray != null)
+        {
+            bucketTray.SetReferences(conveyor, colorQuantizer, locator.SandAbsorber);
+        }
+
+        referencesFound = true;
     }
 
     public void InitializeGame()
     {
-        if (sandArtGenerator != null && sandArtGenerator.sourceImage != null)
+        // Skip analysis if already has precomputed data
+        if (colorQuantizer.HasPrecomputedData && colorQuantizer.BucketDataList.Count > 0)
+        {
+            // Already loaded from precomputed data
+        }
+        else if (sandArtGenerator != null && sandArtGenerator.sourceImage != null)
         {
             colorQuantizer.AnalyzeTexture(sandArtGenerator.sourceImage);
         }

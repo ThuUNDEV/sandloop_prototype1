@@ -18,6 +18,7 @@ public class ConveyorBelt : MonoBehaviour
     private List<Bucket> bucketsOnBelt = new List<Bucket>();
     private Material beltMaterial;
     private float textureOffset = 0f;
+    private bool isInitialized = false;
 
     public Transform StartPoint => startPoint;
     public Transform EndPoint => endPoint;
@@ -26,12 +27,20 @@ public class ConveyorBelt : MonoBehaviour
 
     void Start()
     {
+        Initialize();
+    }
+
+    private void Initialize()
+    {
+        if (isInitialized) return;
+
         if (beltRenderer != null)
         {
             beltMaterial = beltRenderer.material;
         }
 
         ValidateSetup();
+        isInitialized = true;
     }
 
     void Update()
@@ -48,10 +57,16 @@ public class ConveyorBelt : MonoBehaviour
             CreateDefaultPoints();
         }
 
+        // Only use ServiceLocator as fallback if not assigned in Inspector
         if (sandSimulation == null)
         {
-            sandSimulation = FindObjectOfType<SandSimulation>();
+            sandSimulation = GameServiceLocator.Instance.SandSimulation;
         }
+    }
+
+    public void SetSandSimulation(SandSimulation simulation)
+    {
+        sandSimulation = simulation;
     }
 
     private void CreateDefaultPoints()

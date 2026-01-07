@@ -44,13 +44,14 @@ public class ConveyorGameManager : MonoBehaviour
 
     private GameState currentState = GameState.Idle;
     private bool sandArtSpawned = false;
+    private bool referencesInitialized = false;
 
     public GameState CurrentState => currentState;
     public bool IsPlaying => currentState == GameState.Playing;
 
     void Start()
     {
-        FindAllReferences();
+        CacheAllReferences();
         SetupEventListeners();
         UpdateUIState();
     }
@@ -61,28 +62,28 @@ public class ConveyorGameManager : MonoBehaviour
         CheckSandArtSpawn();
     }
 
-    private void FindAllReferences()
+    private void CacheAllReferences()
     {
-        if (sandSimulation == null)
-            sandSimulation = FindObjectOfType<SandSimulation>();
+        if (referencesInitialized) return;
 
-        if (sandArtGenerator == null)
-            sandArtGenerator = FindObjectOfType<SandArtGenerator>();
+        // Sử dụng ServiceLocator thay vì FindObjectOfType nhiều lần
+        var locator = GameServiceLocator.Instance;
+        
+        if (sandSimulation == null) sandSimulation = locator.SandSimulation;
+        if (sandArtGenerator == null) sandArtGenerator = locator.SandArtGenerator;
+        if (colorQuantizer == null) colorQuantizer = locator.ColorQuantizer;
+        if (conveyor == null) conveyor = locator.Conveyor;
+        if (bucketTray == null) bucketTray = locator.BucketTray;
+        if (bucketManager == null) bucketManager = locator.BucketManager;
+        if (sandAbsorber == null) sandAbsorber = locator.SandAbsorber;
 
-        if (colorQuantizer == null)
-            colorQuantizer = FindObjectOfType<ColorQuantizer>();
+        // Pass references to dependent components
+        if (bucketTray != null)
+        {
+            bucketTray.SetReferences(conveyor, colorQuantizer, sandAbsorber);
+        }
 
-        if (conveyor == null)
-            conveyor = FindObjectOfType<ConveyorBelt>();
-
-        if (bucketTray == null)
-            bucketTray = FindObjectOfType<BucketTray>();
-
-        if (bucketManager == null)
-            bucketManager = FindObjectOfType<BucketManager>();
-
-        if (sandAbsorber == null)
-            sandAbsorber = FindObjectOfType<SandAbsorber>();
+        referencesInitialized = true;
     }
 
     private void SetupEventListeners()
@@ -121,16 +122,36 @@ public class ConveyorGameManager : MonoBehaviour
         }
     }
 
+    private float lastSandCheckTime = 0f;
+    private const float SAND_CHECK_INTERVAL = 0.2f; // Check mỗi 0.2 giây thay vì mỗi frame
+
     private void CheckSandArtSpawn()
     {
         if (sandArtSpawned || sandSimulation == null) return;
 
-        int sandCount = CountSandPixels();
-        if (sandCount > 0 && !sandArtSpawned)
+        // Throttle: chỉ check định kỳ thay vì mỗi frame
+        if (Time.time - lastSandCheckTime < SAND_CHECK_INTERVAL) return;
+        lastSandCheckTime = Time.time;
+
+        // Quick check: chỉ cần tìm 1 pixel sand thay vì đếm tất cả
+        if (HasAnySand())
         {
             sandArtSpawned = true;
             OnSandArtDetected();
         }
+    }
+
+    private bool HasAnySand()
+    {
+        if (sandSimulation == null) return false;
+        
+        var map = sandSimulation.GetCurrentWriteMap();
+        // Chỉ cần tìm 1 pixel sand là đủ
+        for (int i = 0; i < map.Length; i++)
+        {
+            if (map[i].type == 1) return true;
+        }
+        return false;
     }
 
     private void OnSandArtDetected()
@@ -156,8 +177,12 @@ public class ConveyorGameManager : MonoBehaviour
         currentState = GameState.Initializing;
         Debug.Log("ConveyorGameManager: Initializing game...");
 
-        // Analyze colors
-        if (sandArtGenerator != null && sandArtGenerator.sourceImage != null)
+        // Analyze colors - skip if already has precomputed data
+        if (colorQuantizer.HasPrecomputedData && colorQuantizer.BucketDataList.Count > 0)
+        {
+            // Already loaded from precomputed data
+        }
+        else if (sandArtGenerator != null && sandArtGenerator.sourceImage != null)
         {
             colorQuantizer.AnalyzeTexture(sandArtGenerator.sourceImage);
         }

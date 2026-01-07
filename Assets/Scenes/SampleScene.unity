@@ -564,8 +564,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   sourceImage: {fileID: 2800000, guid: d9092f87b591a97418e3033361de1862, type: 3}
-  spawnKey: 32
-  imageScale: 0.757
+  autoSpawnOnStart: 1
+  autoSpawnDelay: 0.1
 --- !u!114 &1639151439
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -601,9 +601,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c823b74860e8cb347952f1c6b9773dea, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  precomputedData: {fileID: 11400000, guid: b3fdae1e04082b04abcfd82623eb27aa, type: 2}
+  useRuntimeAnalysis: 0
   maxColorGroups: 12
   colorThreshold: 30
-  bucketCapacity: 100
+  maxTotalBuckets: 16
   showDebugLog: 1
 --- !u!1 &2016368790
 GameObject:
