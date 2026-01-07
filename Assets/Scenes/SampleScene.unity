@@ -461,6 +461,7 @@ MonoBehaviour:
   colorAnalysisData: {fileID: 11400000, guid: b3fdae1e04082b04abcfd82623eb27aa, type: 2}
   showDebugLog: 1
   writeDebugToFile: 0
+  simulationFrameInterval: 0
 --- !u!64 &1639151434
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -564,7 +565,7 @@ MonoBehaviour:
   absorbInterval: 0.01
   scanWidth: 20
   scanHeight: 20
-  offsetX: 20
+  offsetX: 0
   offsetY: 0
   sandSimulation: {fileID: 1639151433}
   simulationRenderer: {fileID: 1639151435}
@@ -669,7 +670,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 1.21, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 0.65502363, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1630988209}

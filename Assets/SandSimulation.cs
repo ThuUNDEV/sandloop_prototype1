@@ -31,6 +31,8 @@ public class SandSimulation : MonoBehaviour
     // Color Analysis Data
     private List<ColorGroup> colorGroups = new List<ColorGroup>();
     private List<BucketData> bucketDataList = new List<BucketData>();
+    [SerializeField]
+    private int simulationFrameInterval;
 
     // Size từ colorAnalysisData
     private int width => colorAnalysisData != null ? colorAnalysisData.sourceWidth : 128;
