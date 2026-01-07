@@ -5,13 +5,13 @@ public class SandArtGenerator : MonoBehaviour
 {
     [Header("Image Source")]
     public Texture2D sourceImage;
-    public KeyCode spawnKey = KeyCode.Space;
     
     [Header("Spawn Settings")]
-    [Range(0f, 1f)]
-    public float imageScale = 0.9f;
+    public bool autoSpawnOnStart = true;
+    public float autoSpawnDelay = 0.1f;
 
     private SandSimulation simulation;
+    private bool hasSpawned = false;
 
     void Start()
     {
@@ -19,28 +19,41 @@ public class SandArtGenerator : MonoBehaviour
         if (simulation == null)
         {
             Debug.LogError("SandArtGenerator requires SandSimulation component!");
+            return;
+        }
+
+        if (autoSpawnOnStart && sourceImage != null)
+        {
+            if (autoSpawnDelay > 0)
+            {
+                Invoke(nameof(AutoSpawn), autoSpawnDelay);
+            }
+            else
+            {
+                AutoSpawn();
+            }
         }
     }
 
-    void Update()
+    private void AutoSpawn()
     {
-        if (Input.GetKeyDown(spawnKey) && sourceImage != null && simulation != null)
+        if (!hasSpawned && sourceImage != null && simulation != null)
         {
             SpawnSandArt();
         }
     }
 
-    void SpawnSandArt()
+    public void SpawnSandArt()
     {
+        if (sourceImage == null || simulation == null) return;
+
+        hasSpawned = true;
         int imgWidth = sourceImage.width;
         int imgHeight = sourceImage.height;
 
-        // Tính toán scale để ảnh vừa với simulation
-        float maxWidth = simulation.Width * imageScale;
-        float maxHeight = simulation.Height * imageScale;
-        
-        float scaleX = maxWidth / imgWidth;
-        float scaleY = maxHeight / imgHeight;
+        // Scale để ảnh vừa với simulation (scale = 1)
+        float scaleX = (float)simulation.Width / imgWidth;
+        float scaleY = (float)simulation.Height / imgHeight;
         float scale = Mathf.Min(scaleX, scaleY);
 
         int scaledWidth = Mathf.RoundToInt(imgWidth * scale);
@@ -86,5 +99,10 @@ public class SandArtGenerator : MonoBehaviour
         }
 
         Debug.Log($"Spawned sand art: {sourceImage.name} ({scaledWidth}x{scaledHeight}) at ({startX},{startY})");
+    }
+
+    public void ResetSpawn()
+    {
+        hasSpawned = false;
     }
 }

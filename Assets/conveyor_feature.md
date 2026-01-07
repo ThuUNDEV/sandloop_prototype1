@@ -94,6 +94,125 @@ Hệ thống băng chuyền kết hợp với khay đựng xô để tạo trả
 
 ---
 
+## Kế hoạch phát triển (Development Plan)
+
+### Phase 1: Data & Core Systems
+
+#### 1.1 Color Quantization System
+**File:** `ColorQuantizer.cs`
+- [ ] Phân tích tranh cát, đếm tất cả màu pixel
+- [ ] Implement thuật toán gom nhóm màu (K-Means hoặc HSV-based)
+- [ ] Output: Danh sách nhóm màu + số pixel mỗi nhóm
+- [ ] Tính toán số xô cần thiết cho mỗi nhóm màu
+
+#### 1.2 Bucket Data
+**File:** `BucketData.cs`
+```csharp
+public class BucketData
+{
+    public Color32 bucketColor;      // Màu đại diện nhóm
+    public int capacity;             // Dung lượng tối đa
+    public int currentFill;          // Số cát đã hút
+    public bool IsFull => currentFill >= capacity;
+}
+```
+
+---
+
+### Phase 2: Game Objects & UI
+
+#### 2.1 Conveyor Belt
+**File:** `ConveyorBelt.cs`
+- [ ] Tạo GameObject băng chuyền (Sprite/UI Image)
+- [ ] Định nghĩa điểm bắt đầu (trái) và kết thúc (phải)
+- [ ] Logic di chuyển xô với tốc độ cố định
+- [ ] Xử lý loop: Xô chưa đầy → quay về đầu
+
+#### 2.2 Bucket Tray UI
+**File:** `BucketTray.cs`
+- [ ] Tạo UI Panel với Grid Layout (12 ô)
+- [ ] Spawn xô vào các ô dựa trên ColorQuantizer
+- [ ] Xử lý click event cho từng xô
+
+#### 2.3 Bucket GameObject
+**File:** `Bucket.cs`
+- [ ] Prefab xô với SpriteRenderer (màu dynamic)
+- [ ] Thuộc tính: BucketData reference
+- [ ] States: InTray, OnConveyor, Completed
+- [ ] Visual feedback khi đang hút cát (fill indicator)
+
+---
+
+### Phase 3: Core Mechanics
+
+#### 3.1 Bucket Spawning
+**File:** `BucketManager.cs`
+- [ ] Nhận data từ ColorQuantizer
+- [ ] Tạo số lượng xô chính xác cho mỗi nhóm màu
+- [ ] Phân bổ xô vào khay (12 ô, có thể scroll nếu > 12)
+
+#### 3.2 Sand Absorption System
+**File:** `SandAbsorber.cs`
+- [ ] Khi xô di chuyển, scan cột pixel phía trên
+- [ ] So sánh màu pixel với nhóm màu của xô
+- [ ] Nếu match: Xóa pixel khỏi tranh + tăng currentFill
+- [ ] Tích hợp với SandSimulation (set cell = Air)
+
+#### 3.3 Conveyor Logic
+**File:** `ConveyorBelt.cs` (mở rộng)
+- [ ] Track danh sách xô đang trên băng chuyền
+- [ ] Update vị trí xô mỗi frame
+- [ ] Check xô đầy → SetActive(false)
+- [ ] Check xô cuối băng chuyền → Reset vị trí
+
+---
+
+### Phase 4: Integration
+
+#### 4.1 Game Flow
+**File:** `ConveyorGameManager.cs`
+- [ ] Khởi tạo: Load tranh → ColorQuantizer → Spawn xô
+- [ ] Gameplay loop: Click xô → Di chuyển → Hút cát
+- [ ] Win condition: Tất cả cát bị hút hết
+
+#### 4.2 Integration với SandSimulation
+- [ ] Hook vào hệ thống Cell hiện tại
+- [ ] Xóa cell bằng cách set type = Air
+- [ ] Đảm bảo không conflict với physics job
+
+---
+
+### Phase 5: Polish
+
+#### 5.1 Visual Effects
+- [ ] Animation xô di chuyển smooth
+- [ ] Particle effect khi hút cát
+- [ ] Fill indicator trên xô (progress bar)
+- [ ] Conveyor belt animation (texture scrolling)
+
+#### 5.2 Audio (Optional)
+- [ ] Sound effect hút cát
+- [ ] Sound effect xô đầy/biến mất
+
+---
+
+## Thứ tự triển khai đề xuất
+
+| Bước | Task | Độ ưu tiên |
+|------|------|-----------|
+| 1 | ColorQuantizer.cs | 🔴 High |
+| 2 | BucketData.cs | 🔴 High |
+| 3 | ConveyorBelt.cs (basic) | 🔴 High |
+| 4 | Bucket.cs + Prefab | 🔴 High |
+| 5 | BucketTray.cs (UI) | 🟡 Medium |
+| 6 | SandAbsorber.cs | 🔴 High |
+| 7 | BucketManager.cs | 🟡 Medium |
+| 8 | ConveyorGameManager.cs | 🟡 Medium |
+| 9 | Visual Effects | 🟢 Low |
+| 10 | Audio | 🟢 Low |
+
+---
+
 ## TODO
 
 - [ ] Thiết kế UI cho khay đựng xô (12 ô)
