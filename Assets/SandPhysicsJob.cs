@@ -33,14 +33,21 @@ public struct SandPhysicsJob : IJob
             {
                 var idx = y * width + x;
                 Cell cell = writeMap[idx];
-                if (cell.type == 1)
+                if (cell.type == 1 && !cell.hasMoved)
                 {
                     var downIdx = (y - 1) * width + x;
                     
-                    // Check straight down FIRST - most natural behavior
+                    // Check down-left first (only if not at left edge)
+                    if (x > 0)
+                    {
+                        var downLeftIdx = (y - 1) * width + (x - 1);
+                        if (writeMap[downLeftIdx].type == 0)
+                        {
+                            MoveCell(idx, downLeftIdx);
+                            continue;
+                        }
+                    }
 
-
-                    // Only check diagonals if straight down is blocked
                     // Check down-right (only if not at right edge)
                     if (x < width - 1)
                     {
@@ -52,17 +59,7 @@ public struct SandPhysicsJob : IJob
                         }
                     }
 
-                    // Check down-left (only if not at left edge)
-                    if (x > 0)
-                    {
-                        var downLeftIdx = (y - 1) * width + (x - 1);
-                        if (writeMap[downLeftIdx].type == 0)
-                        {
-                            MoveCell(idx, downLeftIdx);
-                            continue;
-                        }
-                    }
-                    
+                    // Check straight down LAST
                     if (writeMap[downIdx].type == 0)
                     {
                         MoveCell(idx, downIdx);
@@ -75,14 +72,21 @@ public struct SandPhysicsJob : IJob
             {
                 var idx = y * width + x;
                 Cell cell = writeMap[idx];
-                if (cell.type == 1)
+                if (cell.type == 1 && !cell.hasMoved)
                 {
-
                     var downIdx = (y - 1) * width + x;
 
+                    // Check down-right first (only if not at right edge)
+                    if (x < width - 1)
+                    {
+                        var downRightIdx = (y - 1) * width + (x + 1);
+                        if (writeMap[downRightIdx].type == 0)
+                        {
+                            MoveCell(idx, downRightIdx);
+                            continue;
+                        }
+                    }
 
-
-                    // Only check diagonals if straight down is blocked
                     // Check down-left (only if not at left edge)
                     if (x > 0)
                     {
@@ -94,18 +98,7 @@ public struct SandPhysicsJob : IJob
                         }
                     }
 
-                    // Check down-right (only if not at right edge)
-                    if (x < width - 1)
-                    {
-                        var downRightIdx = (y - 1) * width + (x + 1);
-                        if (writeMap[downRightIdx].type == 0)
-                        {
-                            MoveCell(idx, downRightIdx);
-                            continue;
-                        }
-                    }
-                    
-                    // Check straight down FIRST - most natural behavior
+                    // Check straight down LAST
                     if (writeMap[downIdx].type == 0)
                     {
                         MoveCell(idx, downIdx);
@@ -120,8 +113,11 @@ public struct SandPhysicsJob : IJob
     {
         if (writeMap[toIdx].type == 0)
         {
-            writeMap[toIdx] = writeMap[fromIdx];
-            var empty = new Cell { type = 0, color = new Color32(0,0,0,0) };
+            var movedCell = writeMap[fromIdx];
+            movedCell.hasMoved = true;
+            writeMap[toIdx] = movedCell;
+            
+            var empty = new Cell { type = 0, color = new Color32(0,0,0,0), hasMoved = false };
             writeMap[fromIdx] = empty;
         }
     }

@@ -26,6 +26,7 @@ public class SandSimulation : MonoBehaviour
     private NativeArray<Cell> mapDataB;
     private NativeArray<Color32> textureBuffer;
     private bool useMapA = true;
+    private int frameCounter = 0; // Đếm frame để kiểm soát tốc độ rơi
 
     // Color Analysis Data
     private List<ColorGroup> colorGroups = new List<ColorGroup>();
@@ -67,7 +68,16 @@ public class SandSimulation : MonoBehaviour
 
     void Update()
     {
-        RunSimulation();
+        frameCounter++;
+        
+        // Chỉ chạy physics simulation mỗi N frame
+        if (frameCounter >= simulationFrameInterval)
+        {
+            RunSimulation();
+            frameCounter = 0;
+        }
+        
+        // Luôn cập nhật texture để giữ render mượt
         UpdateTexture();
 
         // Debug: Nhấn D để phân tích cát còn lại
