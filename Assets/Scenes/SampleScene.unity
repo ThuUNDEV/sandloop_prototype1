@@ -459,7 +459,7 @@ MonoBehaviour:
   filterMode: 0
   targetRenderer: {fileID: 1639151435}
   colorAnalysisData: {fileID: 11400000, guid: b3fdae1e04082b04abcfd82623eb27aa, type: 2}
-  showDebugLog: 0
+  showDebugLog: 1
   writeDebugToFile: 0
 --- !u!64 &1639151434
 MeshCollider:
@@ -560,14 +560,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bd91522a4bf946e42a8bfc6c4a0d5120, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  scanWidth: 3.76
-  scanHeight: 0.57
-  maxAbsorbPerFrame: 50
-  scanColumnAbove: 0
-  scanYOffset: -1.91
+  maxAbsorbPerFrame: 20
+  absorbInterval: 0.01
+  scanWidth: 20
+  scanHeight: 20
+  offsetX: 20
+  offsetY: 0
   sandSimulation: {fileID: 1639151433}
   simulationRenderer: {fileID: 1639151435}
-  showDebugGizmos: 1
   OnSandAbsorbed:
     m_PersistentCalls:
       m_Calls: []
